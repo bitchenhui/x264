@@ -35,7 +35,6 @@ checkasm
 *.flv
 *.mp4
 *.y4m
-*.yuv
 *.log
 *.mbtree
 *.temp

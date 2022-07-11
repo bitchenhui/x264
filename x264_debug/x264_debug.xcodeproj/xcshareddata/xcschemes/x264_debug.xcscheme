@@ -46,7 +46,7 @@
       </PathRunnable>
       <CommandLineArguments>
          <CommandLineArgument
-            argument = "--fullhelp"
+            argument = "--input-res 1920x1080  -o /Users/chenhuiduan/Documents/ppcodec/x264/sequence/test.264 /Users/chenhuiduan/Documents/ppcodec/x264/sequence/Tennis+1920x1080.yuv"
             isEnabled = "YES">
          </CommandLineArgument>
       </CommandLineArguments>
