@@ -215,15 +215,23 @@ char *x264_param_strdup( x264_param_t *param, const char *src )
     strdup_buffer *buf = param->opaque;
     if( !buf )
     {
+        // 如果param->opaque是null，需要申请空间
+        // 申请空间大小=BUFFER_OFFSET + BUFFER_DEFAULT_SIZE * sizeof(void *)，
+        // 宏BUFFER_OFFSET=(int)offsetof(strdup_buffer, ptr)，
+        // offsetof()是计算结构体strdup_buffer中ptr的偏移，从strdup_buffer 结构体定义可以看到这个偏移应该等于8
+        // 然后再加上BUFFER_DEFAULT_SIZE * sizeof(void *)
+        // 整个给strdup_buffer结构体分配空间，空间大小等于成员size（int型4个字节）+ count（int型4个字节）+ ptr（16个void*）
         buf = malloc( BUFFER_OFFSET + BUFFER_DEFAULT_SIZE * sizeof(void *) );
         if( !buf )
             goto fail;
-        buf->size = BUFFER_DEFAULT_SIZE;
-        buf->count = 0;
-        param->opaque = buf;
+        buf->size = BUFFER_DEFAULT_SIZE;// 这样理解，这个buf存放的信息是放在ptr上的，这个ptr最大放16个void*
+        buf->count = 0; // count记录的是buf->ptr上已经放了几个void*了，这些指针就是那些文件数据
+        param->opaque = buf; // 这个buf最后放在param->opaque上
     }
     else if( buf->count == buf->size )
     {
+        // 当buf->ptr放的void*信息个数达到最大个数的时候，扩容
+        // 扩容后size等于原来的两倍，按两倍的size realloc
         if( buf->size > (INT_MAX - BUFFER_OFFSET) / 2 / (int)sizeof(void *) )
             goto fail;
         int new_size = buf->size * 2;
@@ -233,10 +241,10 @@ char *x264_param_strdup( x264_param_t *param, const char *src )
         buf->size = new_size;
         param->opaque = buf;
     }
-    char *res = strdup( src );
+    char *res = strdup( src ); // strdup 将字符串拷贝到新的位置res
     if( !res )
         goto fail;
-    buf->ptr[buf->count++] = res;
+    buf->ptr[buf->count++] = res; // res最后放在了buf->ptr上，等于是将信息挂在了param->opaque上，方便统一管理
     return res;
 fail:
     x264_log_internal( X264_LOG_ERROR, "x264_param_strdup failed\n" );

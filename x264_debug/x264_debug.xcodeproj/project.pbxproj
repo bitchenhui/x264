@@ -55,7 +55,6 @@
 		164AAD4E287C84BA00636FE7 /* testing.py */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.python; path = testing.py; sourceTree = "<group>"; };
 		164AAD4F287C84BA00636FE7 /* config.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = config.h; sourceTree = "<group>"; };
 		164AAD50287C84BA00636FE7 /* configure */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.sh; path = configure; sourceTree = "<group>"; };
-		164AAD51287C84BA00636FE7 /* AUTHORS */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = AUTHORS; sourceTree = "<group>"; };
 		164AAD53287C84BA00636FE7 /* y4m.o */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.objfile"; path = y4m.o; sourceTree = "<group>"; };
 		164AAD54287C84BA00636FE7 /* thread.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = thread.c; sourceTree = "<group>"; };
 		164AAD55287C84BA00636FE7 /* input.o */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.objfile"; path = input.o; sourceTree = "<group>"; };
@@ -312,7 +311,6 @@
 		164AAE5E287C84BA00636FE7 /* cabac.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = cabac.c; sourceTree = "<group>"; };
 		164AAE5F287C84BA00636FE7 /* threadpool-8.o */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.objfile"; path = "threadpool-8.o"; sourceTree = "<group>"; };
 		164AAE60287C84BA00636FE7 /* base.o */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.objfile"; path = base.o; sourceTree = "<group>"; };
-		164AAE61287C84BA00636FE7 /* example.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = example.c; sourceTree = "<group>"; };
 		164AAE62287C84BA00636FE7 /* COPYING */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = COPYING; sourceTree = "<group>"; };
 		164AAE63287C84BA00636FE7 /* config.mak */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.make; path = config.mak; sourceTree = "<group>"; };
 		164AAE64287C84BA00636FE7 /* x264cli.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = x264cli.h; sourceTree = "<group>"; };
@@ -336,15 +334,6 @@
 		164AAE7A287C84BA00636FE7 /* libx264.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libx264.a; sourceTree = "<group>"; };
 		164AAE7B287C84BA00636FE7 /* x264dll.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = x264dll.c; sourceTree = "<group>"; };
 		164AAE7C287C84BA00636FE7 /* autocomplete.o */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.objfile"; path = autocomplete.o; sourceTree = "<group>"; };
-		164AAE7E287C84BA00636FE7 /* cl_platform.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = cl_platform.h; sourceTree = "<group>"; };
-		164AAE7F287C84BA00636FE7 /* inttypes.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = inttypes.h; sourceTree = "<group>"; };
-		164AAE80287C84BA00636FE7 /* avisynth_c.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = avisynth_c.h; sourceTree = "<group>"; };
-		164AAE81287C84BA00636FE7 /* getopt.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = getopt.h; sourceTree = "<group>"; };
-		164AAE82287C84BA00636FE7 /* avxsynth_c.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = avxsynth_c.h; sourceTree = "<group>"; };
-		164AAE83287C84BA00636FE7 /* cl.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = cl.h; sourceTree = "<group>"; };
-		164AAE84287C84BA00636FE7 /* getopt.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = getopt.c; sourceTree = "<group>"; };
-		164AAE85287C84BA00636FE7 /* intel_dispatcher.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = intel_dispatcher.h; sourceTree = "<group>"; };
-		164AAE86287C84BA00636FE7 /* stdint.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = stdint.h; sourceTree = "<group>"; };
 		164AAE8B287C8BB200636FE7 /* test.264 */ = {isa = PBXFileReference; lastKnownFileType = file; path = test.264; sourceTree = "<group>"; };
 		164AAE8C287C8BB200636FE7 /* Tennis+1920x1080.yuv */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Tennis+1920x1080.yuv"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -366,7 +355,6 @@
 				164AAD38287C84BA00636FE7 /* tools */,
 				164AAD4F287C84BA00636FE7 /* config.h */,
 				164AAD50287C84BA00636FE7 /* configure */,
-				164AAD51287C84BA00636FE7 /* AUTHORS */,
 				164AAD52287C84BA00636FE7 /* input */,
 				164AAD62287C84BA00636FE7 /* Makefile */,
 				164AAD63287C84BA00636FE7 /* encoder */,
@@ -377,7 +365,6 @@
 				164AADA7287C84BA00636FE7 /* x264_config.h */,
 				164AADA8287C84BA00636FE7 /* config.sub */,
 				164AADA9287C84BA00636FE7 /* common */,
-				164AAE61287C84BA00636FE7 /* example.c */,
 				164AAE62287C84BA00636FE7 /* COPYING */,
 				164AAE63287C84BA00636FE7 /* config.mak */,
 				164AAE64287C84BA00636FE7 /* x264cli.h */,
@@ -396,7 +383,6 @@
 				164AAE7A287C84BA00636FE7 /* libx264.a */,
 				164AAE7B287C84BA00636FE7 /* x264dll.c */,
 				164AAE7C287C84BA00636FE7 /* autocomplete.o */,
-				164AAE7D287C84BA00636FE7 /* extras */,
 			);
 			name = x264;
 			path = ..;
@@ -875,22 +861,6 @@
 				164AAE72287C84BA00636FE7 /* vui.txt */,
 			);
 			path = doc;
-			sourceTree = "<group>";
-		};
-		164AAE7D287C84BA00636FE7 /* extras */ = {
-			isa = PBXGroup;
-			children = (
-				164AAE7E287C84BA00636FE7 /* cl_platform.h */,
-				164AAE7F287C84BA00636FE7 /* inttypes.h */,
-				164AAE80287C84BA00636FE7 /* avisynth_c.h */,
-				164AAE81287C84BA00636FE7 /* getopt.h */,
-				164AAE82287C84BA00636FE7 /* avxsynth_c.h */,
-				164AAE83287C84BA00636FE7 /* cl.h */,
-				164AAE84287C84BA00636FE7 /* getopt.c */,
-				164AAE85287C84BA00636FE7 /* intel_dispatcher.h */,
-				164AAE86287C84BA00636FE7 /* stdint.h */,
-			);
-			path = extras;
 			sourceTree = "<group>";
 		};
 		164AAE8A287C8BB200636FE7 /* sequence */ = {

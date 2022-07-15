@@ -103,16 +103,17 @@ void x264_sps_init( x264_sps_t *sps, int i_id, x264_param_t *param )
     int csp = param->i_csp & X264_CSP_MASK;
 
     sps->i_id = i_id;
-    sps->i_mb_width = ( param->i_width + 15 ) / 16;
-    sps->i_mb_height= ( param->i_height + 15 ) / 16;
-    sps->b_frame_mbs_only = !(param->b_interlaced || param->b_fake_interlaced);
+    sps->i_mb_width = ( param->i_width + 15 ) / 16; // 以16x16宏块为单位的宽
+    sps->i_mb_height= ( param->i_height + 15 ) / 16; // 以16x16宏块为单位的高
+    sps->b_frame_mbs_only = !(param->b_interlaced || param->b_fake_interlaced); // 是否采用帧编码
     if( !sps->b_frame_mbs_only )
-        sps->i_mb_height = ( sps->i_mb_height + 1 ) & ~1;
+        sps->i_mb_height = ( sps->i_mb_height + 1 ) & ~1; // 场编码时 以宏块为单位的图像高度要/2
     sps->i_chroma_format_idc = csp >= X264_CSP_I444 ? CHROMA_444 :
                                csp >= X264_CSP_I422 ? CHROMA_422 :
-                               csp >= X264_CSP_I420 ? CHROMA_420 : CHROMA_400;
-
+                               csp >= X264_CSP_I420 ? CHROMA_420 : CHROMA_400;  // 色度采样格式 yuv444 yuv422 yuv420 yuv400
+    // 如果rc模式为CQP模式，并且qp值为0时，解码重建过程中transform旁路操作开启??
     sps->b_qpprime_y_zero_transform_bypass = param->rc.i_rc_method == X264_RC_CQP && param->rc.i_qp_constant == 0;
+    // 根据一些参数选择profile
     if( sps->b_qpprime_y_zero_transform_bypass || sps->i_chroma_format_idc == CHROMA_444 )
         sps->i_profile_idc  = PROFILE_HIGH444_PREDICTIVE;
     else if( sps->i_chroma_format_idc == CHROMA_422 )

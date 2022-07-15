@@ -1557,21 +1557,22 @@ x264_t *x264_encoder_open( x264_param_t *param, void *api )
         goto fail;
     }
 
-    if( validate_parameters( h, 1 ) < 0 )
+    if( validate_parameters( h, 1 ) < 0 ) // 验证参数的可用性
         goto fail;
 
-    if( h->param.psz_cqm_file )
-        if( x264_cqm_parse_file( h, h->param.psz_cqm_file ) < 0 )
+    if( h->param.psz_cqm_file ) // 是否使用自定义的量化矩阵，一般不会用的
+        if( x264_cqm_parse_file( h, h->param.psz_cqm_file ) < 0 ) // 如果使用自定义的量化矩阵的话，在这儿解析量化矩阵
             goto fail;
-
-    x264_reduce_fraction( &h->param.i_fps_num, &h->param.i_fps_den );
-    x264_reduce_fraction( &h->param.i_timebase_num, &h->param.i_timebase_den );
+    // 这个函数是找到两个参数的最大公约数，然后两个参数和最大公约数相除
+    // 比如经过这个函数后 25:5 --> 5:1, 25:15 --> 5:3 ...
+    x264_reduce_fraction( &h->param.i_fps_num, &h->param.i_fps_den );// 找到fps
+    x264_reduce_fraction( &h->param.i_timebase_num, &h->param.i_timebase_den ); // 用时间做码率控制，开关在vfr
 
     /* Init x264_t */
     h->i_frame = -1;
     h->i_frame_num = 0;
 
-    if( h->param.i_avcintra_class )
+    if( h->param.i_avcintra_class ) // 如果i_avcintra_class为true的话，在这儿设置i_idr_pic_id
         h->i_idr_pic_id = h->param.i_avcintra_class > 200 ? 4 : 5;
     else
         h->i_idr_pic_id = 0;
@@ -1582,9 +1583,10 @@ x264_t *x264_encoder_open( x264_param_t *param, void *api )
         goto fail;
     }
 
-    set_aspect_ratio( h, &h->param, 1 );
+    set_aspect_ratio( h, &h->param, 1 ); // 设置vui信息里面的纵横比
 
-    x264_sps_init( h->sps, h->param.i_sps_id, &h->param );
+    x264_sps_init( h->sps, h->param.i_sps_id, &h->param );// 根据param完善x264_t中的sps信息
+    // param中存在vui信息结构体，但是需要传递给x264_t的sps中才算是起作用
     x264_sps_init_scaling_list( h->sps, &h->param );
     x264_pps_init( h->pps, h->param.i_sps_id, &h->param, h->sps );
 
