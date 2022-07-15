@@ -345,11 +345,11 @@ REALIGN_STACK void x264_param_default( x264_param_t *param )
     memset( param, 0, sizeof( x264_param_t ) );
 
     /* CPU autodetect */
-    param->cpu = x264_cpu_detect();
-    param->i_threads = X264_THREADS_AUTO;
-    param->i_lookahead_threads = X264_THREADS_AUTO;
-    param->b_deterministic = 1;
-    param->i_sync_lookahead = X264_SYNC_LOOKAHEAD_AUTO;
+    param->cpu = x264_cpu_detect(); // 自动检测cpu数量，不开启并行优化时为0
+    param->i_threads = X264_THREADS_AUTO;  // 自动选择最优的线程数
+    param->i_lookahead_threads = X264_THREADS_AUTO; // lookahead编码时自动选择最优的线程数
+    param->b_deterministic = 1; // 多线程时允许非确定性优化
+    param->i_sync_lookahead = X264_SYNC_LOOKAHEAD_AUTO; // 自动选择最佳的lookahead buffer size
 
     /* Video properties */
     param->i_csp           = X264_CHROMA_FORMAT ? X264_CHROMA_FORMAT : X264_CSP_I420;
@@ -367,9 +367,9 @@ REALIGN_STACK void x264_param_default( x264_param_t *param )
     param->i_fps_num       = 25;
     param->i_fps_den       = 1;
     param->i_level_idc     = -1;
-    param->i_slice_max_size = 0;
-    param->i_slice_max_mbs = 0;
-    param->i_slice_count = 0;
+    param->i_slice_max_size = 0; // 一个slice的最大size
+    param->i_slice_max_mbs = 0; // 每个slice的最大宏块数
+    param->i_slice_count = 0; // 一帧的slice数，这里slice必须是矩形slice
 #if HAVE_BITDEPTH8
     param->i_bitdepth = 8;
 #elif HAVE_BITDEPTH10
@@ -379,50 +379,50 @@ REALIGN_STACK void x264_param_default( x264_param_t *param )
 #endif
 
     /* Encoder parameters */
-    param->i_frame_reference = 3;
-    param->i_keyint_max = 250;
-    param->i_keyint_min = X264_KEYINT_MIN_AUTO;
-    param->i_bframe = 3;
-    param->i_scenecut_threshold = 40;
-    param->i_bframe_adaptive = X264_B_ADAPT_FAST;
-    param->i_bframe_bias = 0;
-    param->i_bframe_pyramid = X264_B_PYRAMID_NORMAL;
-    param->b_interlaced = 0;
-    param->b_constrained_intra = 0;
+    param->i_frame_reference = 3; // 最大的参考帧个数
+    param->i_keyint_max = 250; // 每隔i_keyint_max帧，强制编码一个IDR帧
+    param->i_keyint_min = X264_KEYINT_MIN_AUTO; // 当小于i_keyint_min发生场景切换时，编码为I帧而不是IDR帧，默认为0
+    param->i_bframe = 3; // 两个参考帧之间编码b帧个数
+    param->i_scenecut_threshold = 40; // 判断发生场景切换的阈值，超过该阈值认为发生了场景切换
+    param->i_bframe_adaptive = X264_B_ADAPT_FAST; // 使用X264_B_ADAPT_FAST方法进行自适应B帧判定
+    param->i_bframe_bias = 0;  // 控制B帧代替P帧的概率，取值-100 ~ 100，值越大越容易编码出B帧，值越小倾向于少用B帧
+    param->i_bframe_pyramid = X264_B_PYRAMID_NORMAL;  // 允许部分B帧为参考帧，可选取值：0=off,  1=strict hierarchical,  2=normal
+    param->b_interlaced = 0; // 是否场编码
+    param->b_constrained_intra = 0;  // 是否使用受约束的intra编码
 
-    param->b_deblocking_filter = 1;
+    param->b_deblocking_filter = 1; // 区块滤波开关
     param->i_deblocking_filter_alphac0 = 0;
     param->i_deblocking_filter_beta = 0;
 
     param->b_cabac = 1;
-    param->i_cabac_init_idc = 0;
+    param->i_cabac_init_idc = 0; // 给出算术编码初始化时表格的选择
 
     param->rc.i_rc_method = X264_RC_CRF;
     param->rc.i_bitrate = 0;
-    param->rc.f_rate_tolerance = 1.0;
-    param->rc.i_vbv_max_bitrate = 0;
-    param->rc.i_vbv_buffer_size = 0;
-    param->rc.f_vbv_buffer_init = 0.9;
-    param->rc.i_qp_constant = -1;
-    param->rc.f_rf_constant = 23;
+    param->rc.f_rate_tolerance = 1.0; // 码率控制允许的误差
+    param->rc.i_vbv_max_bitrate = 0; // 平均码率模式(ABR)下，最大瞬时码率，默认0
+    param->rc.i_vbv_buffer_size = 0; // 码率控制缓冲区的大小，单位kbit，默认0
+    param->rc.f_vbv_buffer_init = 0.9; // 码率控制缓冲区数据保留的最大数据量与缓冲区大小之比，范围0~1.0，默认0.9
+    param->rc.i_qp_constant = -1; // 指定量化值，0 - 51，0表示无损
+    param->rc.f_rf_constant = 23;  // 实际质量因子，值越大图像越花,越小越清晰
     param->rc.i_qp_min = 0;
     param->rc.i_qp_max = INT_MAX;
-    param->rc.i_qp_step = 4;
-    param->rc.f_ip_factor = 1.4;
-    param->rc.f_pb_factor = 1.3;
-    param->rc.i_aq_mode = X264_AQ_VARIANCE;
-    param->rc.f_aq_strength = 1.0;
-    param->rc.i_lookahead = 40;
+    param->rc.i_qp_step = 4; // 量化步长，即相邻两帧之间量化值之差的最大值
+    param->rc.f_ip_factor = 1.4; // I帧和P帧之间的量化因子（QP）比值，默认1.4
+    param->rc.f_pb_factor = 1.3; // P帧和B帧之间的量化因子（QP）比值(ratio)，默认1.3
+    param->rc.i_aq_mode = X264_AQ_VARIANCE; // 自适应量化模式
+    param->rc.f_aq_strength = 1.0; // AQ强度，减少平坦和纹理区域的块效应和模糊度
+    param->rc.i_lookahead = 40; // lookahead向前预测的帧数
 
-    param->rc.b_stat_write = 0;
-    param->rc.psz_stat_out = "x264_2pass.log";
-    param->rc.b_stat_read = 0;
-    param->rc.psz_stat_in = "x264_2pass.log";
-    param->rc.f_qcompress = 0.6;
-    param->rc.f_qblur = 0.5;
-    param->rc.f_complexity_blur = 20;
-    param->rc.i_zones = 0;
-    param->rc.b_mb_tree = 1;
+    param->rc.b_stat_write = 0; // 将统计数据写入到psz_stat_out中
+    param->rc.psz_stat_out = "x264_2pass.log"; // 2pass时输出文件用于保存第一次编码统计数据
+    param->rc.b_stat_read = 0; // 从文件psz_stat_in中读入统计数据
+    param->rc.psz_stat_in = "x264_2pass.log"; // 输入文件,文件存有第一次编码的统计数据
+    param->rc.f_qcompress = 0.6; // 量化曲线(quantizer curve)压缩因子。0.0 => 恒定比特率，1.0 => 恒定量化值
+    param->rc.f_qblur = 0.5; // 时间上量化模糊度，减少QP的波动
+    param->rc.f_complexity_blur = 20; // 时间上模糊复杂性,减少QP的波动
+    param->rc.i_zones = 0; // 码率控制覆盖
+    param->rc.b_mb_tree = 1; // 是否开启基于macroblock的码控控制方法
 
     /* Log */
     param->pf_log = x264_log_default;
@@ -430,33 +430,33 @@ REALIGN_STACK void x264_param_default( x264_param_t *param )
     param->i_log_level = X264_LOG_INFO;
 
     /* */
-    param->analyse.intra = X264_ANALYSE_I4x4 | X264_ANALYSE_I8x8;
+    param->analyse.intra = X264_ANALYSE_I4x4 | X264_ANALYSE_I8x8; // 设置帧内预测分块模式，4x4  8x8
     param->analyse.inter = X264_ANALYSE_I4x4 | X264_ANALYSE_I8x8
-                         | X264_ANALYSE_PSUB16x16 | X264_ANALYSE_BSUB16x16;
-    param->analyse.i_direct_mv_pred = X264_DIRECT_PRED_SPATIAL;
-    param->analyse.i_me_method = X264_ME_HEX;
-    param->analyse.f_psy_rd = 1.0;
-    param->analyse.b_psy = 1;
-    param->analyse.f_psy_trellis = 0;
-    param->analyse.i_me_range = 16;
-    param->analyse.i_subpel_refine = 7;
-    param->analyse.b_mixed_references = 1;
-    param->analyse.b_chroma_me = 1;
-    param->analyse.i_mv_range_thread = -1;
-    param->analyse.i_mv_range = -1; // set from level_idc
-    param->analyse.i_chroma_qp_offset = 0;
-    param->analyse.b_fast_pskip = 1;
-    param->analyse.b_weighted_bipred = 1;
-    param->analyse.i_weighted_pred = X264_WEIGHTP_SMART;
-    param->analyse.b_dct_decimate = 1;
-    param->analyse.b_transform_8x8 = 1;
-    param->analyse.i_trellis = 1;
-    param->analyse.i_luma_deadzone[0] = 21;
+                         | X264_ANALYSE_PSUB16x16 | X264_ANALYSE_BSUB16x16; // 设置帧间预测分块模式，
+    param->analyse.i_direct_mv_pred = X264_DIRECT_PRED_SPATIAL; // 时间空间运动向量预测模式
+    param->analyse.i_me_method = X264_ME_HEX; // 运动估计算法
+    param->analyse.f_psy_rd = 1.0;  // Psy RD强度
+    param->analyse.b_psy = 1; // Psy优化开关，可能会增强细节
+    param->analyse.f_psy_trellis = 0; // Psy Trellis强度
+    param->analyse.i_me_range = 16; // 整像素运动估计搜索范围
+    param->analyse.i_subpel_refine = 7; // 亚像素运动估计质量
+    param->analyse.b_mixed_references = 1; // 允许每个宏块的分区有它自己的参考
+    param->analyse.b_chroma_me = 1; // chroma ME for subpel and mode decision in P-frames
+    param->analyse.i_mv_range_thread = -1; // minimum space between threads. -1 = auto, based on number of threads.
+    param->analyse.i_mv_range = -1; // set from level_idc // 运动矢量最大长度
+    param->analyse.i_chroma_qp_offset = 0; // 色度量化步长偏移量
+    param->analyse.b_fast_pskip = 1; // 快速P帧跳过检测
+    param->analyse.b_weighted_bipred = 1; // B帧隐式加权预测
+    param->analyse.i_weighted_pred = X264_WEIGHTP_SMART; // P帧加权模式
+    param->analyse.b_dct_decimate = 1; // 是否使用P帧变换系数阈值
+    param->analyse.b_transform_8x8 = 1;  // 是否使用8*8 DCT
+    param->analyse.i_trellis = 1; // Trellis量化提高效率，对每个8x8的块寻找合适的量化值
+    param->analyse.i_luma_deadzone[0] = 21; // 亮度量化中使用的盲区大小，{ 帧间, 帧内 }
     param->analyse.i_luma_deadzone[1] = 11;
-    param->analyse.b_psnr = 0;
-    param->analyse.b_ssim = 0;
+    param->analyse.b_psnr = 0; // 是否计算和打印PSNR信息
+    param->analyse.b_ssim = 0; // 是否计算和打印SSIM信息
 
-    param->i_cqm_preset = X264_CQM_FLAT;
+    param->i_cqm_preset = X264_CQM_FLAT; // 自定义量化矩阵(CQM), 初始化量化模式为flat
     memset( param->cqm_4iy, 16, sizeof( param->cqm_4iy ) );
     memset( param->cqm_4py, 16, sizeof( param->cqm_4py ) );
     memset( param->cqm_4ic, 16, sizeof( param->cqm_4ic ) );
@@ -466,16 +466,16 @@ REALIGN_STACK void x264_param_default( x264_param_t *param )
     memset( param->cqm_8ic, 16, sizeof( param->cqm_8ic ) );
     memset( param->cqm_8pc, 16, sizeof( param->cqm_8pc ) );
 
-    param->b_repeat_headers = 1;
-    param->b_annexb = 1;
-    param->b_aud = 0;
-    param->b_vfr_input = 1;
+    param->b_repeat_headers = 1; // put SPS/PPS before each keyframe
+    param->b_annexb = 1; // 值为true，则NALU之前是4字节前缀码0x00000001；值为false，则NALU之前的4个字节为NALU长度
+    param->b_aud = 0; // 生成访问单元分隔符
+    param->b_vfr_input = 1; // VFR input.  If 1, use timebase and timestamps for ratecontrol purposes. If 0, use fps only.
     param->i_nal_hrd = X264_NAL_HRD_NONE;
     param->b_tff = 1;
     param->b_pic_struct = 0;
     param->b_fake_interlaced = 0;
     param->i_frame_packing = -1;
-    param->i_alternative_transfer = 2; /* undef */
+    param->i_alternative_transfer = 2; /* undef */ // alternative transfer SEI
     param->b_opencl = 0;
     param->i_opencl_device = 0;
     param->opencl_device_id = NULL;
