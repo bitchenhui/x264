@@ -1941,20 +1941,22 @@ static int encode( x264_param_t *param, cli_opt_t *opt )
         param->i_timebase_den = param->i_fps_num * pulldown->fps_factor;
     }
 
-    h = x264_encoder_open( param );
+    h = x264_encoder_open( param ); // 根据之前设置的编码参数打开编码器
     FAIL_IF_ERROR2( !h, "x264_encoder_open failed\n" );
 
     x264_encoder_parameters( h, param );
 
     FAIL_IF_ERROR2( cli_output.set_param( opt->hout, param ), "can't set outfile param\n" );
 
-    i_start = x264_mdate();
+    i_start = x264_mdate(); // 编码开始计时
 
     /* ticks/frame = ticks/second / frames/second */
     ticks_per_frame = (int64_t)param->i_timebase_den * param->i_fps_den / param->i_timebase_num / param->i_fps_num;
     FAIL_IF_ERROR2( ticks_per_frame < 1 && !param->b_vfr_input, "ticks_per_frame invalid: %"PRId64"\n", ticks_per_frame );
     ticks_per_frame = X264_MAX( ticks_per_frame, 1 );
-
+    // 如果b_repeat_headers==false,也就是只在第一个I帧前编码header(sps/pps/sei)，此时在这个地方编码开始的时候编码一次header，后面编码I帧就不会再编码header了;
+    // 如果b_repeat_header==true,表示每个I帧前面都要写入header，此时这个地方就不专门写入header了，而是在每次编码I帧的地方写入header
+    // rtc还是需要每个i帧前都编码sps和pps比较靠谱
     if( !param->b_repeat_headers )
     {
         // Write SPS/PPS/SEI
@@ -1968,13 +1970,14 @@ static int encode( x264_param_t *param, cli_opt_t *opt )
     if( opt->tcfile_out )
         fprintf( opt->tcfile_out, "# timecode format v2\n" );
 
-    /* Encode frames */
+    /* Encode frames 循环每次读取一帧yuv进行编码 b_ctrl_c初始化为0*/
     for( ; !b_ctrl_c && (i_frame < param->i_frame_total || !param->i_frame_total); i_frame++ )
     {
+        // 从输入yuv文件中读取一帧数据到cli_pic中
         if( filter.get_frame( opt->hin, &cli_pic, i_frame + opt->i_seek ) )
             break;
         x264_picture_init( &pic );
-        convert_cli_to_lib_pic( &pic, &cli_pic );
+        convert_cli_to_lib_pic( &pic, &cli_pic );// 将从yuv输入文件读取到的一帧数据copy到pic中
 
         if( !param->b_vfr_input )
             pic.i_pts = i_frame;
@@ -2008,7 +2011,7 @@ static int encode( x264_param_t *param, cli_opt_t *opt )
             parse_qpfile( opt, &pic, i_frame + opt->i_seek );
 
         prev_dts = last_dts;
-        i_frame_size = encode_frame( h, opt->hout, &pic, &last_dts );
+        i_frame_size = encode_frame( h, opt->hout, &pic, &last_dts );// 编码一帧yuv数据，返回编码当前帧的码流size
         if( i_frame_size < 0 )
         {
             b_ctrl_c = 1; /* lie to exit the loop */
@@ -2061,22 +2064,23 @@ fail:
     else
         duration = (double)(2 * largest_pts - second_largest_pts) * param->i_timebase_num / param->i_timebase_den;
 
-    i_end = x264_mdate();
+    i_end = x264_mdate(); // 编码结束计时
     /* Erase progress indicator before printing encoding stats. */
     if( opt->b_progress )
         fprintf( stderr, "                                                                               \r" );
     if( h )
-        x264_encoder_close( h );
+        x264_encoder_close( h ); // 关闭编码器
     fprintf( stderr, "\n" );
 
     if( b_ctrl_c )
         fprintf( stderr, "aborted at input frame %d, output frame %d\n", opt->i_seek + i_frame, i_frame_output );
 
-    cli_output.close_file( opt->hout, largest_pts, second_largest_pts );
+    cli_output.close_file( opt->hout, largest_pts, second_largest_pts ); // 关闭输出文件
     opt->hout = NULL;
 
     if( i_frame_output > 0 )
     {
+        // 根据编码帧数和所耗时间计算编码帧率
         double fps = (double)i_frame_output * (double)1000000 /
                      (double)( i_end - i_start );
 
