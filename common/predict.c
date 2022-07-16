@@ -885,10 +885,10 @@ static void predict_8x8_hu_c( pixel *src, pixel edge[36] )
  ****************************************************************************/
 void x264_predict_16x16_init( uint32_t cpu, x264_predict_t pf[7] )
 {
-    pf[I_PRED_16x16_V ]     = x264_predict_16x16_v_c;
-    pf[I_PRED_16x16_H ]     = x264_predict_16x16_h_c;
-    pf[I_PRED_16x16_DC]     = x264_predict_16x16_dc_c;
-    pf[I_PRED_16x16_P ]     = x264_predict_16x16_p_c;
+    pf[I_PRED_16x16_V ]     = x264_predict_16x16_v_c; // 垂直
+    pf[I_PRED_16x16_H ]     = x264_predict_16x16_h_c; // 水平
+    pf[I_PRED_16x16_DC]     = x264_predict_16x16_dc_c; // DC
+    pf[I_PRED_16x16_P ]     = x264_predict_16x16_p_c; // plane
     pf[I_PRED_16x16_DC_LEFT]= predict_16x16_dc_left_c;
     pf[I_PRED_16x16_DC_TOP ]= predict_16x16_dc_top_c;
     pf[I_PRED_16x16_DC_128 ]= predict_16x16_dc_128_c;

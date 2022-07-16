@@ -71,20 +71,20 @@
       <BreakpointProxy
          BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
          <BreakpointContent
-            uuid = "215BC481-3259-4FBB-A253-F597CDF99A56"
+            uuid = "52CF7DAA-9786-4895-8BA1-9B00D78A9D01"
             shouldBeEnabled = "Yes"
             ignoreCount = "0"
             continueAfterRunningActions = "No"
             filePath = "../encoder/encoder.c"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "1517"
-            endingLineNumber = "1517"
+            startingLineNumber = "1604"
+            endingLineNumber = "1604"
             landmarkName = "x264_encoder_open(param, api)"
             landmarkType = "9">
             <Locations>
                <Location
-                  uuid = "215BC481-3259-4FBB-A253-F597CDF99A56 - ec2f701a3d4554a9"
+                  uuid = "52CF7DAA-9786-4895-8BA1-9B00D78A9D01 - ec2f701a3d455e64"
                   shouldBeEnabled = "Yes"
                   ignoreCount = "0"
                   continueAfterRunningActions = "No"
@@ -94,12 +94,12 @@
                   urlString = "file:///Users/chenhuiduan/Documents/ppcodec/x264/encoder/encoder.c"
                   startingColumnNumber = "9223372036854775807"
                   endingColumnNumber = "9223372036854775807"
-                  startingLineNumber = "1521"
-                  endingLineNumber = "1521"
-                  offsetFromSymbolStart = "39">
+                  startingLineNumber = "1604"
+                  endingLineNumber = "1604"
+                  offsetFromSymbolStart = "681">
                </Location>
                <Location
-                  uuid = "215BC481-3259-4FBB-A253-F597CDF99A56 - 524bd95fd8a8b49f"
+                  uuid = "52CF7DAA-9786-4895-8BA1-9B00D78A9D01 - 524bd95fd8a8be52"
                   shouldBeEnabled = "Yes"
                   ignoreCount = "0"
                   continueAfterRunningActions = "No"
@@ -109,9 +109,9 @@
                   urlString = "file:///Users/chenhuiduan/Documents/ppcodec/x264/encoder/encoder.c"
                   startingColumnNumber = "9223372036854775807"
                   endingColumnNumber = "9223372036854775807"
-                  startingLineNumber = "1521"
-                  endingLineNumber = "1521"
-                  offsetFromSymbolStart = "39">
+                  startingLineNumber = "1604"
+                  endingLineNumber = "1604"
+                  offsetFromSymbolStart = "681">
                </Location>
             </Locations>
          </BreakpointContent>

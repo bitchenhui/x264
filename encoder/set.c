@@ -144,7 +144,7 @@ void x264_sps_init( x264_sps_t *sps, int i_id, x264_param_t *param )
     /* Intra profiles */
     if( param->i_keyint_max == 1 && sps->i_profile_idc >= PROFILE_HIGH )
         sps->b_constraint_set3 = 1;
-
+    // vui参数并非解码必须参数，
     sps->vui.i_num_reorder_frames = param->i_bframe_pyramid ? 2 : param->i_bframe ? 1 : 0;
     /* extra slot with pyramid so that we don't have to override the
      * order of forgetting old pictures */
@@ -264,14 +264,14 @@ void x264_sps_init_reconfigurable( x264_sps_t *sps, x264_param_t *param )
         sps->vui.i_sar_height= param->vui.i_sar_height;
     }
 }
-
+// 自定义量化矩阵初始化函数
 void x264_sps_init_scaling_list( x264_sps_t *sps, x264_param_t *param )
 {
     switch( sps->i_cqm_preset )
     {
     case X264_CQM_FLAT:
         for( int i = 0; i < 8; i++ )
-            sps->scaling_list[i] = x264_cqm_flat16;
+            sps->scaling_list[i] = x264_cqm_flat16; // 保存在scaling_list中以便后面量化使用
         break;
     case X264_CQM_JVT:
         for( int i = 0; i < 8; i++ )
@@ -279,7 +279,7 @@ void x264_sps_init_scaling_list( x264_sps_t *sps, x264_param_t *param )
         break;
     case X264_CQM_CUSTOM:
         /* match the transposed DCT & zigzag */
-        transpose( param->cqm_4iy, 4 );
+        transpose( param->cqm_4iy, 4 ); // 将cqm_4iy保存的数据做了个对角变换
         transpose( param->cqm_4py, 4 );
         transpose( param->cqm_4ic, 4 );
         transpose( param->cqm_4pc, 4 );
@@ -287,18 +287,18 @@ void x264_sps_init_scaling_list( x264_sps_t *sps, x264_param_t *param )
         transpose( param->cqm_8py, 8 );
         transpose( param->cqm_8ic, 8 );
         transpose( param->cqm_8pc, 8 );
-        sps->scaling_list[CQM_4IY] = param->cqm_4iy;
-        sps->scaling_list[CQM_4PY] = param->cqm_4py;
-        sps->scaling_list[CQM_4IC] = param->cqm_4ic;
-        sps->scaling_list[CQM_4PC] = param->cqm_4pc;
-        sps->scaling_list[CQM_8IY+4] = param->cqm_8iy;
-        sps->scaling_list[CQM_8PY+4] = param->cqm_8py;
-        sps->scaling_list[CQM_8IC+4] = param->cqm_8ic;
-        sps->scaling_list[CQM_8PC+4] = param->cqm_8pc;
+        sps->scaling_list[CQM_4IY] = param->cqm_4iy; // 代表i帧y分量4x4块量化时的矩阵
+        sps->scaling_list[CQM_4PY] = param->cqm_4py; // 代表p帧y分量4x4块量化时的矩阵
+        sps->scaling_list[CQM_4IC] = param->cqm_4ic; // 代表i帧色度分量4x4块量化时的矩阵
+        sps->scaling_list[CQM_4PC] = param->cqm_4pc; // 代表p帧色度分量4x4块量化时的矩阵
+        sps->scaling_list[CQM_8IY+4] = param->cqm_8iy; // i帧 8x8 y亮度
+        sps->scaling_list[CQM_8PY+4] = param->cqm_8py; // p帧 8x8 y亮度
+        sps->scaling_list[CQM_8IC+4] = param->cqm_8ic; // i帧 8x8 色度
+        sps->scaling_list[CQM_8PC+4] = param->cqm_8pc; // p帧 8x8 色度
         for( int i = 0; i < 8; i++ )
             for( int j = 0; j < (i < 4 ? 16 : 64); j++ )
                 if( sps->scaling_list[i][j] == 0 )
-                    sps->scaling_list[i] = x264_cqm_jvt[i];
+                    sps->scaling_list[i] = x264_cqm_jvt[i]; // 通过上面赋值后，如果scaling_list中某个值是0，那么直接将该行替换成x264_cqm_jvt
         break;
     }
 }
@@ -480,18 +480,18 @@ void x264_sps_write( bs_t *s, x264_sps_t *sps )
 void x264_pps_init( x264_pps_t *pps, int i_id, x264_param_t *param, x264_sps_t *sps )
 {
     pps->i_id = i_id;
-    pps->i_sps_id = sps->i_id;
-    pps->b_cabac = param->b_cabac;
+    pps->i_sps_id = sps->i_id; // 当前pps所属的sps
+    pps->b_cabac = param->b_cabac; // 是否使用CABAC
 
     pps->b_pic_order = !param->i_avcintra_class && param->b_interlaced;
     pps->i_num_slice_groups = 1;
 
-    pps->i_num_ref_idx_l0_default_active = param->i_frame_reference;
+    pps->i_num_ref_idx_l0_default_active = param->i_frame_reference; // 目前参考帧队列长度
     pps->i_num_ref_idx_l1_default_active = 1;
-
+    // 加权预测
     pps->b_weighted_pred = param->analyse.i_weighted_pred > 0;
     pps->b_weighted_bipred = param->analyse.b_weighted_bipred ? 2 : 0;
-
+    // 量化qp的初始值
     pps->i_pic_init_qp = param->rc.i_rc_method == X264_RC_ABR || param->b_stitchable ? 26 + QP_BD_OFFSET : SPEC_QP( param->rc.i_qp_constant );
     pps->i_pic_init_qs = 26 + QP_BD_OFFSET;
 
@@ -873,12 +873,13 @@ int x264_sei_avcintra_vanc_write( x264_t *h, bs_t *s, int len )
         x264_log( h, X264_LOG_WARNING, __VA_ARGS__ );\
     ret = 1;\
 }
-
+// 查找合适level
 int x264_validate_levels( x264_t *h, int verbose )
 {
     int ret = 0;
-    int mbs = h->sps->i_mb_width * h->sps->i_mb_height;
-    int dpb = mbs * h->sps->vui.i_max_dec_frame_buffering;
+    int mbs = h->sps->i_mb_width * h->sps->i_mb_height; // 一帧图像有多少mb宏块
+    int dpb = mbs * h->sps->vui.i_max_dec_frame_buffering; // 解码图像缓存区的mb数量
+    //TODO:cbp解释，和vbv buffer相关
     int cbp_factor = h->sps->i_profile_idc>=PROFILE_HIGH422 ? 16 :
                      h->sps->i_profile_idc==PROFILE_HIGH10 ? 12 :
                      h->sps->i_profile_idc==PROFILE_HIGH ? 5 : 4;
@@ -886,7 +887,7 @@ int x264_validate_levels( x264_t *h, int verbose )
     const x264_level_t *l = x264_levels;
     while( l->level_idc != 0 && l->level_idc != h->param.i_level_idc )
         l++;
-
+    // check当前参数是否满足当前level_idc的各项要求，符合返回0，不符合返回1
     if( l->frame_size < mbs
         || l->frame_size*8 < h->sps->i_mb_width * h->sps->i_mb_width
         || l->frame_size*8 < h->sps->i_mb_height * h->sps->i_mb_height )

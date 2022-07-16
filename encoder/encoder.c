@@ -1247,17 +1247,17 @@ static int validate_parameters( x264_t *h, int b_open )
     if( h->param.analyse.i_subpel_refine >= 10 && (h->param.analyse.i_trellis != 2 || !h->param.rc.i_aq_mode) )
         h->param.analyse.i_subpel_refine = 9;
 
-    if( b_open )
+    if( b_open ) // 计算level_idc
     {
         const x264_level_t *l = x264_levels;
         if( h->param.i_level_idc < 0 )
         {
-            int maxrate_bak = h->param.rc.i_vbv_max_bitrate;
+            int maxrate_bak = h->param.rc.i_vbv_max_bitrate; // 备份当前i_vbv_max_bitrate
             if( h->param.rc.i_rc_method == X264_RC_ABR && h->param.rc.i_vbv_buffer_size <= 0 )
-                h->param.rc.i_vbv_max_bitrate = h->param.rc.i_bitrate * 2;
+                h->param.rc.i_vbv_max_bitrate = h->param.rc.i_bitrate * 2; // 如果rc是abr模式，且i_vbv_buffer_size <= 0,设置i_vbv_max_bitrate=2 bitrate
             x264_sps_init( h->sps, h->param.i_sps_id, &h->param );
             do h->param.i_level_idc = l->level_idc;
-                while( l[1].level_idc && x264_validate_levels( h, 0 ) && l++ );
+                while( l[1].level_idc && x264_validate_levels( h, 0 ) && l++ ); // 遍历查找合适的level
             h->param.rc.i_vbv_max_bitrate = maxrate_bak;
         }
         else
@@ -1587,29 +1587,30 @@ x264_t *x264_encoder_open( x264_param_t *param, void *api )
 
     x264_sps_init( h->sps, h->param.i_sps_id, &h->param );// 根据param完善x264_t中的sps信息
     // param中存在vui信息结构体，但是需要传递给x264_t的sps中才算是起作用
-    x264_sps_init_scaling_list( h->sps, &h->param );
+    x264_sps_init_scaling_list( h->sps, &h->param ); // 自定义量化矩阵初始化函数
     x264_pps_init( h->pps, h->param.i_sps_id, &h->param, h->sps );
 
     x264_validate_levels( h, 1 );
 
     h->chroma_qp_table = i_chroma_qp_table + 12 + h->pps->i_chroma_qp_index_offset;
-
+    // FIXME:x264_cqm_init作用
     if( x264_cqm_init( h ) < 0 )
         goto fail;
-
+    // 把sps和pps设置好的部分参数copy到mb层
     h->mb.i_mb_width = h->sps->i_mb_width;
     h->mb.i_mb_height = h->sps->i_mb_height;
     h->mb.i_mb_count = h->mb.i_mb_width * h->mb.i_mb_height;
-
+    // 暂时理解为有没有色度分量
     h->mb.chroma_h_shift = CHROMA_FORMAT == CHROMA_420 || CHROMA_FORMAT == CHROMA_422;
     h->mb.chroma_v_shift = CHROMA_FORMAT == CHROMA_420;
 
     /* Adaptive MBAFF and subme 0 are not supported as we require halving motion
      * vectors during prediction, resulting in hpel mvs.
      * The chosen solution is to make MBAFF non-adaptive in this case. */
-    h->mb.b_adaptive_mbaff = PARAM_INTERLACED && h->param.analyse.i_subpel_refine;
+    h->mb.b_adaptive_mbaff = PARAM_INTERLACED && h->param.analyse.i_subpel_refine; // 自适应量化
 
     /* Init frames. */
+    // 延时帧数量
     if( h->param.i_bframe_adaptive == X264_B_ADAPT_TRELLIS && !h->param.rc.b_stat_read )
         h->frames.i_delay = X264_MAX(h->param.i_bframe,3)*4;
     else
@@ -1640,7 +1641,7 @@ x264_t *x264_encoder_open( x264_param_t *param, void *api )
     h->frames.i_input    = 0;
     h->frames.i_largest_pts = h->frames.i_second_largest_pts = -1;
     h->frames.i_poc_last_open_gop = -1;
-
+    // CHECKED_MALLOCZERO调用malloc()分配内存,然后调用memset()置零
     CHECKED_MALLOCZERO( h->cost_table, sizeof(*h->cost_table) );
     CHECKED_MALLOCZERO( h->frames.unused[0], (h->frames.i_delay + 3) * sizeof(x264_frame_t *) );
     /* Allocate room for max refs plus a few extra just in case. */
@@ -1653,7 +1654,7 @@ x264_t *x264_encoder_open( x264_param_t *param, void *api )
     h->i_cpb_delay = h->i_coded_fields = h->i_disp_fields = 0;
     h->i_prev_duration = ((uint64_t)h->param.i_fps_den * h->sps->vui.i_time_scale) / ((uint64_t)h->param.i_fps_num * h->sps->vui.i_num_units_in_tick);
     h->i_disp_fields_last_frame = -1;
-    x264_rdo_init();
+    x264_rdo_init(); // rdo初始化
 
     /* init CPU functions */
 #if (ARCH_X86 || ARCH_X86_64) && HIGH_BIT_DEPTH
