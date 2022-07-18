@@ -536,10 +536,14 @@ void x264_predict_4x4_h_c( pixel *src )
     SRC_X4(0,1) = PIXEL_SPLAT_X4( SRC(-1,1) );
     SRC_X4(0,2) = PIXEL_SPLAT_X4( SRC(-1,2) );
     SRC_X4(0,3) = PIXEL_SPLAT_X4( SRC(-1,3) );
+    // 比对上面宏就是把每行左边参考值，赋值给4x4块的每行
 }
 void x264_predict_4x4_v_c( pixel *src )
 {
     PREDICT_4x4_DC(SRC_X4(0,-1));
+    // 1.获取src[-32]也就是上方第一个像素值;
+    // 2.把这一个像素值copy到32bit中4个字节的src中
+    // 3. 对4x4块进行赋值
 }
 
 #define PREDICT_4x4_LOAD_LEFT\
@@ -565,8 +569,9 @@ void x264_predict_4x4_v_c( pixel *src )
 
 static void predict_4x4_ddl_c( pixel *src )
 {
-    PREDICT_4x4_LOAD_TOP
-    PREDICT_4x4_LOAD_TOP_RIGHT
+    PREDICT_4x4_LOAD_TOP // 获取4x4块正上方一行4个参考像素
+    PREDICT_4x4_LOAD_TOP_RIGHT // 获取4x4块右上方一行4个参考像素
+    // 挨个赋值4x4的块，原理按照斜向左下对角线进行预测
     SRC(0,0)= F2(t0,t1,t2);
     SRC(1,0)=SRC(0,1)= F2(t1,t2,t3);
     SRC(2,0)=SRC(1,1)=SRC(0,2)= F2(t2,t3,t4);
@@ -577,9 +582,10 @@ static void predict_4x4_ddl_c( pixel *src )
 }
 static void predict_4x4_ddr_c( pixel *src )
 {
-    int lt = SRC(-1,-1);
-    PREDICT_4x4_LOAD_LEFT
-    PREDICT_4x4_LOAD_TOP
+    int lt = SRC(-1,-1); // 获取4x4块[-1.-1]位置的像素块数值
+    PREDICT_4x4_LOAD_LEFT // 获取4x4块正左边一列4个像素
+    PREDICT_4x4_LOAD_TOP // 获取4x4块正上方一行4个参考像素
+    // 挨个赋值4x4的块，原理按照斜向右下对角线进行预测
     SRC(3,0)= F2(t3,t2,t1);
     SRC(2,0)=SRC(3,1)= F2(t2,t1,t0);
     SRC(1,0)=SRC(2,1)=SRC(3,2)= F2(t1,t0,lt);
@@ -588,7 +594,7 @@ static void predict_4x4_ddr_c( pixel *src )
     SRC(0,2)=SRC(1,3)= F2(l0,l1,l2);
     SRC(0,3)= F2(l1,l2,l3);
 }
-
+// 竖"日"字斜向右下，但是边缘值做了近似处理
 static void predict_4x4_vr_c( pixel *src )
 {
     int lt = SRC(-1,-1);
@@ -605,7 +611,7 @@ static void predict_4x4_vr_c( pixel *src )
     SRC(3,1)= F2(t1,t2,t3);
     SRC(3,0)= F1(t2,t3);
 }
-
+// 横"日"字斜向右下，但是边缘值做了近似处理
 static void predict_4x4_hd_c( pixel *src )
 {
     int lt= SRC(-1,-1);
@@ -622,7 +628,7 @@ static void predict_4x4_hd_c( pixel *src )
     SRC(2,0)= F2(t1,t0,lt);
     SRC(3,0)= F2(t2,t1,t0);
 }
-
+// 竖"日"字斜向左下，但是边缘值做了近似处理
 static void predict_4x4_vl_c( pixel *src )
 {
     PREDICT_4x4_LOAD_TOP
@@ -638,7 +644,7 @@ static void predict_4x4_vl_c( pixel *src )
     SRC(3,2)= F1(t4,t5);
     SRC(3,3)= F2(t4,t5,t6);
 }
-
+// 横"日"字斜向右上，但是边缘值做了近似处理
 static void predict_4x4_hu_c( pixel *src )
 {
     PREDICT_4x4_LOAD_LEFT
