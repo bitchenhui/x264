@@ -64,26 +64,30 @@
 void x264_predict_16x16_dc_c( pixel *src )
 {
     int dc = 0;
-
+    // 把16x16块左边和上面的参考像素的值加起来，存储在dc中
     for( int i = 0; i < 16; i++ )
     {
-        dc += src[-1 + i * FDEC_STRIDE];
-        dc += src[i - FDEC_STRIDE];
+        dc += src[-1 + i * FDEC_STRIDE];// 16x16块左边的数值
+        dc += src[i - FDEC_STRIDE];// 16x16块上面的数值
     }
+    // 1.求dc中所有元素均值；2.把这个数据复制到32bit数据dcsplat中，每8bit复制一遍
     pixel4 dcsplat = PIXEL_SPLAT_X4( ( dc + 16 ) >> 5 );
-
+    // 把这个数值填充进16x16块
     PREDICT_16x16_DC( dcsplat );
 }
+// dc特殊模式1:适用于顶部参考像素不可用的dc帧内预测
 static void predict_16x16_dc_left_c( pixel *src )
 {
-    int dc = 0;
-
+    int dc = 0;、
+    // 左面参考像素累加
     for( int i = 0; i < 16; i++ )
         dc += src[-1 + i * FDEC_STRIDE];
+    // 1.取均值；2.数值copy到32bit前24bit
     pixel4 dcsplat = PIXEL_SPLAT_X4( ( dc + 8 ) >> 4 );
-
+    // 把该均值赋值给16x16块
     PREDICT_16x16_DC( dcsplat );
 }
+// dc特殊模式2:适用于左边参考像素不可用的dc帧内预测
 static void predict_16x16_dc_top_c( pixel *src )
 {
     int dc = 0;
@@ -94,15 +98,19 @@ static void predict_16x16_dc_top_c( pixel *src )
 
     PREDICT_16x16_DC( dcsplat );
 }
+// dc特殊模式3:适用于顶部和左边参考像素均不可用的dc帧内预测
 static void predict_16x16_dc_128_c( pixel *src )
 {
-    PREDICT_16x16_DC( PIXEL_SPLAT_X4( 1 << (BIT_DEPTH-1) ) );
+    PREDICT_16x16_DC( PIXEL_SPLAT_X4( 1 << (BIT_DEPTH-1) ) );// 此时dc模式只和bitdepth相关:8bit=14;10bit=18
 }
+// 帧内预测16x16水平模式
 void x264_predict_16x16_h_c( pixel *src )
 {
     for( int i = 0; i < 16; i++ )
     {
         const pixel4 v = PIXEL_SPLAT_X4( src[-1] );
+        // const uint32_t v = (src[-1])*0x01010101U;
+        // PIXEL_SPLAT_X4()的作用应该是把最后一个像素（最后8位）拷贝给前面3个像素（前24位）
         MPIXEL_X4( src+ 0 ) = v;
         MPIXEL_X4( src+ 4 ) = v;
         MPIXEL_X4( src+ 8 ) = v;
@@ -110,26 +118,53 @@ void x264_predict_16x16_h_c( pixel *src )
         src += FDEC_STRIDE;
     }
 }
+// 帧内预测16x16垂直模式
 void x264_predict_16x16_v_c( pixel *src )
 {
     pixel4 v0 = MPIXEL_X4( &src[ 0-FDEC_STRIDE] );
     pixel4 v1 = MPIXEL_X4( &src[ 4-FDEC_STRIDE] );
     pixel4 v2 = MPIXEL_X4( &src[ 8-FDEC_STRIDE] );
     pixel4 v3 = MPIXEL_X4( &src[12-FDEC_STRIDE] );
-
-    for( int i = 0; i < 16; i++ )
+    // bitdepth=8时，MPIXEL_X4=M32 32bit中可以存放4个8bit像素
+    // #define M32(src) (((x264_union32_t*)(src))->i)
+    // uint32_t v0 = ((x264_union32_t*)(&src[ 0-FDEC_STRIDE]))->i;
+    // uint32_t v1 = ((x264_union32_t*)(&src[ 4-FDEC_STRIDE]))->i;
+    // uint32_t v2 = ((x264_union32_t*)(&src[ 8-FDEC_STRIDE]))->i;
+    // uint32_t v3 = ((x264_union32_t*)(&src[12-FDEC_STRIDE]))->i;
+    // 再根据宏转换一下定义
+    // uint32_t v0 = *((uint32_t*)(&src[ 0-FDEC_STRIDE]));
+    // uint32_t v1 = *((uint32_t*)(&src[ 4-FDEC_STRIDE]));
+    // uint32_t v2 = *((uint32_t*)(&src[ 8-FDEC_STRIDE]));
+    // uint32_t v3 = *((uint32_t*)(&src[12-FDEC_STRIDE]));
+    // #define FDEC_STRIDE 32
+    // 分4次，每次取出4个像素
+    // v0,v1,v2和v3之所以能成功表示16x16块数值上面一行的的16个像素，默认此时处理宏块顺序:正上mb->正左mb->srcmb
+    for( int i = 0; i < 16; i++ )// 循环赋值16行
     {
         MPIXEL_X4( src+ 0 ) = v0;
         MPIXEL_X4( src+ 4 ) = v1;
         MPIXEL_X4( src+ 8 ) = v2;
         MPIXEL_X4( src+12 ) = v3;
+        // (((x264_union32_t*)(src+ 0))->i) = v0;
+        // (((x264_union32_t*)(src+ 4))->i) = v1;
+        // (((x264_union32_t*)(src+ 8))->i) = v2;
+        // (((x264_union32_t*)(src+12))->i) = v3;
+        // 再根据宏转换下定义
+        // *((uint32_t*)(src+ 0)) = v0;
+        // *((uint32_t*)(src+ 4)) = v1;
+        // *((uint32_t*)(src+ 8)) = v2;
+        // *((uint32_t*)(src+ 12)) = v3;
+        // 分4次赋值，每次赋值4个像素
+        // 下一行
         src += FDEC_STRIDE;
     }
 }
 void x264_predict_16x16_p_c( pixel *src )
 {
     int H = 0, V = 0;
-
+    // H利用上方参考像素计算横向梯度
+    // V利用左方参考像素计算纵向梯度
+    // 该梯度定义由264官方给出
     /* calculate H and V */
     for( int i = 0; i <= 7; i++ )
     {
@@ -137,22 +172,22 @@ void x264_predict_16x16_p_c( pixel *src )
         V += ( i + 1 ) * ( src[-1 + (8+i)*FDEC_STRIDE] - src[-1 + (6-i)*FDEC_STRIDE] );
     }
 
-    int a = 16 * ( src[-1 + 15*FDEC_STRIDE] + src[15 - FDEC_STRIDE] );
-    int b = ( 5 * H + 32 ) >> 6;
-    int c = ( 5 * V + 32 ) >> 6;
+    int a = 16 * ( src[-1 + 15*FDEC_STRIDE] + src[15 - FDEC_STRIDE] );// 左下角+右上角对角线参考像素之和的16倍
+    int b = ( 5 * H + 32 ) >> 6;// 横向梯度
+    int c = ( 5 * V + 32 ) >> 6;// 纵向梯度
 
-    int i00 = a - b * 7 - c * 7 + 16;
+    int i00 = a - b * 7 - c * 7 + 16; // 归一化之后的计算公式
 
     for( int y = 0; y < 16; y++ )
     {
         int pix = i00;
         for( int x = 0; x < 16; x++ )
         {
-            src[x] = x264_clip_pixel( pix>>5 );
-            pix += b;
+            src[x] = x264_clip_pixel( pix>>5 );// /32赋值给16x16
+            pix += b;//按照横向梯度渐变
         }
         src += FDEC_STRIDE;
-        i00 += c;
+        i00 += c;// 按照纵向梯度渐变
     }
 }
 
@@ -889,6 +924,7 @@ void x264_predict_16x16_init( uint32_t cpu, x264_predict_t pf[7] )
     pf[I_PRED_16x16_H ]     = x264_predict_16x16_h_c; // 水平
     pf[I_PRED_16x16_DC]     = x264_predict_16x16_dc_c; // DC
     pf[I_PRED_16x16_P ]     = x264_predict_16x16_p_c; // plane
+    // 下面3种是dc模式的特殊场景:上面像素不可用；左面像素不可用；上面和左面均不可用时的处理
     pf[I_PRED_16x16_DC_LEFT]= predict_16x16_dc_left_c;
     pf[I_PRED_16x16_DC_TOP ]= predict_16x16_dc_top_c;
     pf[I_PRED_16x16_DC_128 ]= predict_16x16_dc_128_c;
