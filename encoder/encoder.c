@@ -1668,7 +1668,7 @@ x264_t *x264_encoder_open( x264_param_t *param, void *api )
     x264_predict_8x16c_init( h->param.cpu, h->predict_8x16c );// 帧内预测色度8x16，不清楚运用在什么格式
     x264_predict_8x8_init( h->param.cpu, h->predict_8x8, &h->predict_8x8_filter );// 帧内预测亮度8x8，为适应8x8dct后加的。模式与4x4相同
     x264_predict_4x4_init( h->param.cpu, h->predict_4x4 );// 帧内预测亮度4x4
-    x264_pixel_init( h->param.cpu, &h->pixf );
+    x264_pixel_init( h->param.cpu, &h->pixf );// 像素计算函数初始化
     x264_dct_init( h->param.cpu, &h->dctf );
     x264_zigzag_init( h->param.cpu, &h->zigzagf_progressive, &h->zigzagf_interlaced );
     memcpy( &h->zigzagf, PARAM_INTERLACED ? &h->zigzagf_interlaced : &h->zigzagf_progressive, sizeof(h->zigzagf) );

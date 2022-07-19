@@ -139,7 +139,7 @@ static void dct2x4dc( dctcoef dct[8], dctcoef dct4x4[8][16] )
     dct4x4[6][0] = 0;
     dct4x4[7][0] = 0;
 }
-
+// 求残差矩阵
 static inline void pixel_sub_wxh( dctcoef *diff, int i_size,
                                   pixel *pix1, int i_pix1, pixel *pix2, int i_pix2 )
 {
@@ -157,7 +157,7 @@ static void sub4x4_dct( dctcoef dct[16], pixel *pix1, pixel *pix2 )
     dctcoef d[16];
     dctcoef tmp[16];
 
-    pixel_sub_wxh( d, 4, pix1, FENC_STRIDE, pix2, FDEC_STRIDE );
+    pixel_sub_wxh( d, 4, pix1, FENC_STRIDE, pix2, FDEC_STRIDE );//计算残差矩阵d
 
     for( int i = 0; i < 4; i++ )
     {
@@ -498,7 +498,7 @@ void x264_dct_init( uint32_t cpu, x264_dct_function_t *dctf )
     dctf->idct4x4dc = idct4x4dc;
 
     dctf->dct2x4dc = dct2x4dc;
-
+// 下面都是基于平台做的汇编优化，先略过
 #if HIGH_BIT_DEPTH
 #if HAVE_MMX
     if( cpu&X264_CPU_MMX )

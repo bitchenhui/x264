@@ -807,23 +807,28 @@ static int x264_pixel_ads1( int enc_dc[1], uint16_t *sums, int delta,
 void x264_pixel_init( uint32_t cpu, x264_pixel_function_t *pixf )
 {
     memset( pixf, 0, sizeof(*pixf) );
-
+// 初始化2个函数 16x16，16x8
 #define INIT2_NAME( name1, name2, cpu ) \
     pixf->name1[PIXEL_16x16] = x264_pixel_##name2##_16x16##cpu;\
     pixf->name1[PIXEL_16x8]  = x264_pixel_##name2##_16x8##cpu;
+    // 初始化4个函数 16x16，16x8，8x16，8x8
 #define INIT4_NAME( name1, name2, cpu ) \
     INIT2_NAME( name1, name2, cpu ) \
     pixf->name1[PIXEL_8x16]  = x264_pixel_##name2##_8x16##cpu;\
     pixf->name1[PIXEL_8x8]   = x264_pixel_##name2##_8x8##cpu;
+    // 初始化5个函数 16x16，16x8，8x16，8x8，8x4
 #define INIT5_NAME( name1, name2, cpu ) \
     INIT4_NAME( name1, name2, cpu ) \
     pixf->name1[PIXEL_8x4]   = x264_pixel_##name2##_8x4##cpu;
+    // 初始化6个函数 16x16，16x8，8x16，8x8，8x4，4x8
 #define INIT6_NAME( name1, name2, cpu ) \
     INIT5_NAME( name1, name2, cpu ) \
     pixf->name1[PIXEL_4x8]   = x264_pixel_##name2##_4x8##cpu;
+    // 初始化7个函数 16x16，16x8，8x16，8x8，8x4，4x8，4x4
 #define INIT7_NAME( name1, name2, cpu ) \
     INIT6_NAME( name1, name2, cpu ) \
     pixf->name1[PIXEL_4x4]   = x264_pixel_##name2##_4x4##cpu;
+    // 初始化8个函数 16x16，16x8，8x16，8x8，8x4，4x8，4x4，4x16
 #define INIT8_NAME( name1, name2, cpu ) \
     INIT7_NAME( name1, name2, cpu ) \
     pixf->name1[PIXEL_4x16]  = x264_pixel_##name2##_4x16##cpu;
@@ -838,27 +843,57 @@ void x264_pixel_init( uint32_t cpu, x264_pixel_function_t *pixf )
     pixf->ads[PIXEL_16x16] = x264_pixel_ads4##cpu;\
     pixf->ads[PIXEL_16x8] = x264_pixel_ads2##cpu;\
     pixf->ads[PIXEL_8x8] = x264_pixel_ads1##cpu;
+// 下面的函数都可以按照上述宏定义递归展开
+    INIT8( sad, );// 8个sad函数
+   //  展开后:
+   // pixf->sad[PIXEL_16x16] = x264_pixel_sad_16x16;
+   // pixf->sad[PIXEL_16x8]  = x264_pixel_sad_16x8;
+   // pixf->sad[PIXEL_8x16]  = x264_pixel_sad_8x16;
+   // pixf->sad[PIXEL_8x8]   = x264_pixel_sad_8x8;
+   // pixf->sad[PIXEL_8x4]   = x264_pixel_sad_8x4;
+   // pixf->sad[PIXEL_4x8]   = x264_pixel_sad_4x8;
+   // pixf->sad[PIXEL_4x4]   = x264_pixel_sad_4x4;
+   // pixf->sad[PIXEL_4x16]  = x264_pixel_sad_4x16;
 
-    INIT8( sad, );
-    INIT8_NAME( sad_aligned, sad, );
-    INIT7( sad_x3, );
-    INIT7( sad_x4, );
-    INIT8( ssd, );
-    INIT8( satd, );
-    INIT7( satd_x3, );
-    INIT7( satd_x4, );
+    INIT8_NAME( sad_aligned, sad, );// 8个sad函数
+    INIT7( sad_x3, );// 7个sad函数，一次性计算3次
+    INIT7( sad_x4, );// 7个sad函数，一次性计算4次
+    INIT8( ssd, );// 8个ssd函数，可用于求psnr
+    // 展开后
+//    pixf->ssd[PIXEL_16x16] = x264_pixel_ssd_16x16;
+//    pixf->ssd[PIXEL_16x8]  = x264_pixel_ssd_16x8;
+//    pixf->ssd[PIXEL_8x16]  = x264_pixel_ssd_8x16;
+//    pixf->ssd[PIXEL_8x8]   = x264_pixel_ssd_8x8;
+//    pixf->ssd[PIXEL_8x4]   = x264_pixel_ssd_8x4;
+//    pixf->ssd[PIXEL_4x8]   = x264_pixel_ssd_4x8;
+//    pixf->ssd[PIXEL_4x4]   = x264_pixel_ssd_4x4;
+//    pixf->ssd[PIXEL_4x16]  = x264_pixel_ssd_4x16;
+    INIT8( satd, );// 8个satd函数
+    // 展开后
+//    pixf->satd[PIXEL_16x16] = x264_pixel_satd_16x16;
+//    pixf->satd[PIXEL_16x8]  = x264_pixel_satd_16x8;
+//    pixf->satd[PIXEL_8x16]  = x264_pixel_satd_8x16;
+//    pixf->satd[PIXEL_8x8]   = x264_pixel_satd_8x8;
+//    pixf->satd[PIXEL_8x4]   = x264_pixel_satd_8x4;
+//    pixf->satd[PIXEL_4x8]   = x264_pixel_satd_4x8;
+//    pixf->satd[PIXEL_4x4]   = x264_pixel_satd_4x4;
+//    pixf->satd[PIXEL_4x16]  = x264_pixel_satd_4x16;
+    INIT7( satd_x3, );// 7个satd函数，一次性计算3次
+    INIT7( satd_x4, );// 7个satd函数，一次性计算4次
     INIT4( hadamard_ac, );
     INIT_ADS( );
-
+    //
     pixf->sa8d[PIXEL_16x16] = x264_pixel_sa8d_16x16;
     pixf->sa8d[PIXEL_8x8]   = x264_pixel_sa8d_8x8;
+    // mb的平方和累加
     pixf->var[PIXEL_16x16] = pixel_var_16x16;
     pixf->var[PIXEL_8x16]  = pixel_var_8x16;
     pixf->var[PIXEL_8x8]   = pixel_var_8x8;
-    pixf->var2[PIXEL_8x16]  = pixel_var2_8x16;
-    pixf->var2[PIXEL_8x8]   = pixel_var2_8x8;
+    pixf->var2[PIXEL_8x16]  = pixel_var2_8x16;// uv分量
+    pixf->var2[PIXEL_8x8]   = pixel_var2_8x8;// uv分量
 
     pixf->ssd_nv12_core = pixel_ssd_nv12_core;
+    // ssim
     pixf->ssim_4x4x2_core = ssim_4x4x2_core;
     pixf->ssim_end4 = ssim_end4;
     pixf->vsad = pixel_vsad;
@@ -874,7 +909,7 @@ void x264_pixel_init( uint32_t cpu, x264_pixel_function_t *pixf )
     pixf->intra_satd_x3_8x16c = intra_satd_x3_8x16c;
     pixf->intra_sad_x3_16x16  = intra_sad_x3_16x16;
     pixf->intra_satd_x3_16x16 = intra_satd_x3_16x16;
-
+    // 下面都是根据不同平台的汇编函数初始化，略过
 #if HIGH_BIT_DEPTH
 #if HAVE_MMX
     if( cpu&X264_CPU_MMX2 )
