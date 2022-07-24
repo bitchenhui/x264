@@ -156,9 +156,10 @@ static void sub4x4_dct( dctcoef dct[16], pixel *pix1, pixel *pix2 )
 {
     dctcoef d[16];
     dctcoef tmp[16];
-
+    // pix1编码帧mb，pix2重建帧mb
     pixel_sub_wxh( d, 4, pix1, FENC_STRIDE, pix2, FDEC_STRIDE );//计算残差矩阵d
-
+    // 蝶形运算：横向4像素。因为二维dct变换的可拆分性质，可以分开计算
+    // 另外，dct变换中一部分运算合并到量化中进行，确保变换是无损的高小的，把这部分精度损失放到量化中进行
     for( int i = 0; i < 4; i++ )
     {
         int s03 = d[i*4+0] + d[i*4+3];
@@ -171,7 +172,27 @@ static void sub4x4_dct( dctcoef dct[16], pixel *pix1, pixel *pix2 )
         tmp[2*4+i] =   s03 -   s12;
         tmp[3*4+i] =   d03 - 2*d12;
     }
-
+    // 纵向运算:
+    // 1  1  1  1       x00 x01 x02 x03
+    // 2  1 -1 -2       x10 x11 x12 x13
+    // 1 -1 -1  1  *    x20 x21 x22 x23
+    // 1 -2  2 -1       x30 x31 x32 x33
+    // tmp00 = x00 + x10 + x20 + x30
+    // tmp10 = 2x00 + x10 - x20 - 2x30
+    // tmp20 = x00 - x10 - x20 + x30
+    // tmp30 = x00 - 2x10 + 2x20 - x30
+    
+    // 横向运算:
+    // x00 x01 x02 x03       1  2  1  1
+    // x10 x11 x12 x13       1  1 -1 -2
+    // x20 x21 x22 x23   *   1 -1 -1  2
+    // x30 x31 x32 x33       1 -2  1 -1
+    // X00 = x00 + x01 + x02 + x03
+    // X01 = 2x00 + x01 - x02 - 2x03
+    // X02 = x00 - x01 - x02 + x03
+    // X03 = X00 -2X01 + 2x02 - x03
+    
+    // 蝶形运算:纵向4像素
     for( int i = 0; i < 4; i++ )
     {
         int s03 = tmp[i*4+0] + tmp[i*4+3];
@@ -201,7 +222,7 @@ static void sub16x16_dct( dctcoef dct[16][16], pixel *pix1, pixel *pix2 )
     sub8x8_dct( &dct[ 8], &pix1[8*FENC_STRIDE+0], &pix2[8*FDEC_STRIDE+0] );
     sub8x8_dct( &dct[12], &pix1[8*FENC_STRIDE+8], &pix2[8*FDEC_STRIDE+8] );
 }
-
+// 计算4x4像素间差值参差之和，但是用处目前不太清糊
 static int sub4x4_dct_dc( pixel *pix1, pixel *pix2 )
 {
     int sum = 0;
@@ -271,11 +292,18 @@ static void add4x4_idct( pixel *p_dst, dctcoef dct[16] )
 {
     dctcoef d[16];
     dctcoef tmp[16];
-
+    // dct反变换其实就是把正变换的矩阵左乘改右乘
+    // 1  2  1  1       x00 x01 x02 x03      1  1  1  1
+    // 1  1 -1 -2       x10 x11 x12 x13      2  1 -1 -2
+    // 1 -1 -1  2  *    x20 x21 x22 x23  *   1 -1 -1  1
+    // 1 -2  1 -1       x30 x31 x32 x33      1 -2  2 -1
+    // 纵向计算
+    // tmp0 = x00 + 2x01 + x02 + x03
     for( int i = 0; i < 4; i++ )
     {
         int s02 =  dct[0*4+i]     +  dct[2*4+i];
         int d02 =  dct[0*4+i]     -  dct[2*4+i];
+        // FIXME:倍数关系没搞明白
         int s13 =  dct[1*4+i]     + (dct[3*4+i]>>1);
         int d13 = (dct[1*4+i]>>1) -  dct[3*4+i];
 
@@ -291,14 +319,14 @@ static void add4x4_idct( pixel *p_dst, dctcoef dct[16] )
         int d02 =  tmp[0*4+i]     -  tmp[2*4+i];
         int s13 =  tmp[1*4+i]     + (tmp[3*4+i]>>1);
         int d13 = (tmp[1*4+i]>>1) -  tmp[3*4+i];
-
+        // FIXME:倍数关系没搞明白
         d[0*4+i] = ( s02 + s13 + 32 ) >> 6;
         d[1*4+i] = ( d02 + d13 + 32 ) >> 6;
         d[2*4+i] = ( d02 - d13 + 32 ) >> 6;
         d[3*4+i] = ( s02 - s13 + 32 ) >> 6;
     }
 
-
+    // 将反变换之后的参数数据叠加到预测数据上
     for( int y = 0; y < 4; y++ )
     {
         for( int x = 0; x < 4; x++ )
@@ -326,7 +354,9 @@ static void add16x16_idct( pixel *p_dst, dctcoef dct[16][16] )
 /****************************************************************************
  * 8x8 transform:
  ****************************************************************************/
-
+// 一维8x8dct变换过程
+// 快速计算过程就是要计算出8个中间变量；另外根据下面变换可以算出x264使用的8x8dct变换矩阵
+// TODO:理论推导8x8变换矩阵，并与x264中使用的进行对比
 #define DCT8_1D {\
     int s07 = SRC(0) + SRC(7);\
     int s16 = SRC(1) + SRC(6);\
@@ -357,9 +387,10 @@ static void add16x16_idct( pixel *p_dst, dctcoef dct[16][16] )
 static void sub8x8_dct8( dctcoef dct[64], pixel *pix1, pixel *pix2 )
 {
     dctcoef tmp[64];
-
+    // 计算编码帧mb和重建帧mb之间的参差矩阵(8x8)
     pixel_sub_wxh( tmp, 8, pix1, FENC_STRIDE, pix2, FDEC_STRIDE );
-
+    // 利用宏定义分行列计算8x8矩阵的dct变换
+    // 计算过程类似4x4dct变换，需要先推导出8x8dct变换矩阵，然后去除融合在量化模块的矩阵后分行列进行计算即可
 #define SRC(x) tmp[x*8+i]
 #define DST(x) tmp[x*8+i]
     for( int i = 0; i < 8; i++ )
@@ -436,7 +467,7 @@ static void add16x16_idct8( pixel *dst, dctcoef dct[4][64] )
     add8x8_idct8( &dst[8*FDEC_STRIDE+0], dct[2] );
     add8x8_idct8( &dst[8*FDEC_STRIDE+8], dct[3] );
 }
-
+// 把编码帧mb和重建帧mb的参差之和平均叠加到预测数据上，感觉是一种特殊的参差计算模式
 static inline void add4x4_idct_dc( pixel *p_dst, dctcoef dc )
 {
     dc = (dc + 32) >> 6;
@@ -474,26 +505,26 @@ static void add16x16_idct_dc( pixel *p_dst, dctcoef dct[16] )
  ****************************************************************************/
 void x264_dct_init( uint32_t cpu, x264_dct_function_t *dctf )
 {
-    dctf->sub4x4_dct    = sub4x4_dct;
-    dctf->add4x4_idct   = add4x4_idct;
+    dctf->sub4x4_dct    = sub4x4_dct;// 4x4参差矩阵计算dct变换
+    dctf->add4x4_idct   = add4x4_idct;// 将dct反变换后的参差数据叠加到预测数据上
 
-    dctf->sub8x8_dct    = sub8x8_dct;
-    dctf->sub8x8_dct_dc = sub8x8_dct_dc;
-    dctf->add8x8_idct   = add8x8_idct;
-    dctf->add8x8_idct_dc = add8x8_idct_dc;
+    dctf->sub8x8_dct    = sub8x8_dct;// 8x8参差矩阵计算dct变换x，调用4x4的计算
+    dctf->sub8x8_dct_dc = sub8x8_dct_dc;// 8x8编码帧mb和重建帧mb间参差像素值之和
+    dctf->add8x8_idct   = add8x8_idct;// 8x8反变换后参数数据叠加预测数据，调用4个4x4计算函数
+    dctf->add8x8_idct_dc = add8x8_idct_dc;// 8x8 fan变化后预测数据平均叠加参差像素值之和
 
     dctf->sub8x16_dct_dc = sub8x16_dct_dc;
 
-    dctf->sub16x16_dct  = sub16x16_dct;
+    dctf->sub16x16_dct  = sub16x16_dct;// 递归调用4x4dct计算16x16块参差数据dct变换
     dctf->add16x16_idct = add16x16_idct;
     dctf->add16x16_idct_dc = add16x16_idct_dc;
 
-    dctf->sub8x8_dct8   = sub8x8_dct8;
+    dctf->sub8x8_dct8   = sub8x8_dct8;// 直接使用8x8dct变换而不是调用4次4x4算法，复杂度后高一点但是能量聚集性等性能肯定优于4x4
     dctf->add8x8_idct8  = add8x8_idct8;
 
-    dctf->sub16x16_dct8  = sub16x16_dct8;
+    dctf->sub16x16_dct8  = sub16x16_dct8;// 利用8x8dct变换计算16x16块的dct变换
     dctf->add16x16_idct8 = add16x16_idct8;
-
+    // 下面3个应该也是特殊使用的变换矩阵
     dctf->dct4x4dc  = dct4x4dc;
     dctf->idct4x4dc = idct4x4dc;
 
