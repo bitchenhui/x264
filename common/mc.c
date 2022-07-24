@@ -606,14 +606,14 @@ static void mbtree_fix8_unpack( float *dst, uint16_t *src, int count )
     for( int i = 0; i < count; i++ )
         dst[i] = (int16_t)endian_fix16( src[i] ) * (1.0f/256.0f);
 }
-
+// 运动补偿初始化
 void x264_mc_init( uint32_t cpu, x264_mc_functions_t *pf, int cpu_independent )
 {
-    pf->mc_luma   = mc_luma;
-    pf->get_ref   = get_ref;
+    pf->mc_luma   = mc_luma;// 亮度运动补偿
+    pf->get_ref   = get_ref;// 获得匹配块
 
-    pf->mc_chroma = mc_chroma;
-
+    pf->mc_chroma = mc_chroma;// 色度运动补偿
+    // 求平均
     pf->avg[PIXEL_16x16]= pixel_avg_16x16;
     pf->avg[PIXEL_16x8] = pixel_avg_16x8;
     pf->avg[PIXEL_8x16] = pixel_avg_8x16;
@@ -626,12 +626,12 @@ void x264_mc_init( uint32_t cpu, x264_mc_functions_t *pf, int cpu_independent )
     pf->avg[PIXEL_2x8]  = pixel_avg_2x8;
     pf->avg[PIXEL_2x4]  = pixel_avg_2x4;
     pf->avg[PIXEL_2x2]  = pixel_avg_2x2;
-
+    // 加权相关
     pf->weight    = mc_weight_wtab;
     pf->offsetadd = mc_weight_wtab;
     pf->offsetsub = mc_weight_wtab;
     pf->weight_cache = weight_cache;
-
+    // 拷贝像素
     pf->copy_16x16_unaligned = mc_copy_w16;
     pf->copy[PIXEL_16x16] = mc_copy_w16;
     pf->copy[PIXEL_8x8]   = mc_copy_w8;
@@ -649,16 +649,16 @@ void x264_mc_init( uint32_t cpu, x264_mc_functions_t *pf, int cpu_independent )
     pf->plane_copy_deinterleave_yuyv = x264_plane_copy_deinterleave_c;
     pf->plane_copy_deinterleave_rgb = plane_copy_deinterleave_rgb_c;
     pf->plane_copy_deinterleave_v210 = plane_copy_deinterleave_v210_c;
-
+    // 关键:半像素内插
     pf->hpel_filter = hpel_filter;
-
+    // 几个空函数
     pf->prefetch_fenc_400 = prefetch_fenc_null;
     pf->prefetch_fenc_420 = prefetch_fenc_null;
     pf->prefetch_fenc_422 = prefetch_fenc_null;
     pf->prefetch_ref  = prefetch_ref_null;
     pf->memcpy_aligned = memcpy;
     pf->memzero_aligned = memzero_aligned;
-    pf->frame_init_lowres_core = frame_init_lowres_core;
+    pf->frame_init_lowres_core = frame_init_lowres_core;// 降低分辨率——线性内插
 
     pf->integral_init4h = integral_init4h;
     pf->integral_init8h = integral_init8h;
@@ -669,7 +669,7 @@ void x264_mc_init( uint32_t cpu, x264_mc_functions_t *pf, int cpu_independent )
     pf->mbtree_propagate_list = mbtree_propagate_list;
     pf->mbtree_fix8_pack      = mbtree_fix8_pack;
     pf->mbtree_fix8_unpack    = mbtree_fix8_unpack;
-
+// 下面都是不同平台下的汇编函数初始化，先略
 #if HAVE_MMX
     x264_mc_init_mmx( cpu, pf );
 #endif

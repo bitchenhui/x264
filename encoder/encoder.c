@@ -1669,10 +1669,11 @@ x264_t *x264_encoder_open( x264_param_t *param, void *api )
     x264_predict_8x8_init( h->param.cpu, h->predict_8x8, &h->predict_8x8_filter );// 帧内预测亮度8x8，为适应8x8dct后加的。模式与4x4相同
     x264_predict_4x4_init( h->param.cpu, h->predict_4x4 );// 帧内预测亮度4x4
     x264_pixel_init( h->param.cpu, &h->pixf );// 像素计算函数初始化
-    x264_dct_init( h->param.cpu, &h->dctf );
-    x264_zigzag_init( h->param.cpu, &h->zigzagf_progressive, &h->zigzagf_interlaced );
+    x264_dct_init( h->param.cpu, &h->dctf );// dct变换函数初始化
+    x264_zigzag_init( h->param.cpu, &h->zigzagf_progressive, &h->zigzagf_interlaced );// z字扫描函数初始化
+    // 帧扫描:h->zigzagf_progressive;场扫描:h->zigzagf_interlaced，会根据当前真实编码选择赋值zig-zag
     memcpy( &h->zigzagf, PARAM_INTERLACED ? &h->zigzagf_interlaced : &h->zigzagf_progressive, sizeof(h->zigzagf) );
-    x264_mc_init( h->param.cpu, &h->mc, h->param.b_cpu_independent );
+    x264_mc_init( h->param.cpu, &h->mc, h->param.b_cpu_independent );// 运动补偿相关函数初始化
     x264_quant_init( h, h->param.cpu, &h->quantf );
     x264_deblock_init( h->param.cpu, &h->loopf, PARAM_INTERLACED );
     x264_bitstream_init( h->param.cpu, &h->bsf );

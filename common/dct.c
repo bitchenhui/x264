@@ -524,11 +524,11 @@ void x264_dct_init( uint32_t cpu, x264_dct_function_t *dctf )
 
     dctf->sub16x16_dct8  = sub16x16_dct8;// 利用8x8dct变换计算16x16块的dct变换
     dctf->add16x16_idct8 = add16x16_idct8;
-    // 下面3个应该也是特殊使用的变换矩阵
-    dctf->dct4x4dc  = dct4x4dc;
-    dctf->idct4x4dc = idct4x4dc;
 
-    dctf->dct2x4dc = dct2x4dc;
+    dctf->dct4x4dc  = dct4x4dc;// 4x4 hardmard变换
+    dctf->idct4x4dc = idct4x4dc;// 4x4 hardmard逆变换
+
+    dctf->dct2x4dc = dct2x4dc;// 2x4 hardmard变换
 // 下面都是基于平台做的汇编优化，先略过
 #if HIGH_BIT_DEPTH
 #if HAVE_MMX
@@ -828,6 +828,23 @@ static void zigzag_scan_8x8_field( dctcoef level[64], dctcoef dct[64] )
 static void zigzag_scan_4x4_frame( dctcoef level[16], dctcoef dct[16] )
 {
     ZIGZAG4_FRAME
+//    // 展开为:
+//    level[0] = dct[0*4 + 0];
+//    level[1] = dct[1*4 + 0];
+//    level[2] = dct[0*4 + 1];
+//    level[3] = dct[0*4 + 2];
+//    level[4] = dct[1*4 + 1];
+//    level[5] = dct[0*4 + 2];
+//    level[6] = dct[0*4 + 3];
+//    level[7] = dct[1*4 + 2];
+//    level[8] = dct[2*4 + 1];
+//    level[9] = dct[3*4 + 0];
+//    level[10] = dct[3*4 + 1];
+//    level[11] = dct[2*4 + 2];
+//    level[12] = dct[1*4 + 3];
+//    level[13] = dct[2*4 + 3];
+//    level[14] = dct[3*4 + 2];
+//    level[15] = dct[3*4 + 3];
 }
 
 static void zigzag_scan_4x4_field( dctcoef level[16], dctcoef dct[16] )
@@ -864,7 +881,7 @@ static int zigzag_sub_4x4_frame( dctcoef level[16], const pixel *p_src, pixel *p
 {
     int nz = 0;
     ZIGZAG4_FRAME
-    COPY4x4
+    COPY4x4 // 拷贝4x4块
     return !!nz;
 }
 
@@ -934,17 +951,18 @@ static void zigzag_interleave_8x8_cavlc( dctcoef *dst, dctcoef *src, uint8_t *nn
 
 void x264_zigzag_init( uint32_t cpu, x264_zigzag_function_t *pf_progressive, x264_zigzag_function_t *pf_interlaced )
 {
+    // 按照大小分为4x4扫描和8x8扫描；按照图像类别可分为帧扫描和场扫描
     pf_interlaced->scan_8x8   = zigzag_scan_8x8_field;
     pf_progressive->scan_8x8  = zigzag_scan_8x8_frame;
     pf_interlaced->scan_4x4   = zigzag_scan_4x4_field;
-    pf_progressive->scan_4x4  = zigzag_scan_4x4_frame;
+    pf_progressive->scan_4x4  = zigzag_scan_4x4_frame;// 最基础扫描:4x4mb帧扫描模式
     pf_interlaced->sub_8x8    = zigzag_sub_8x8_field;
     pf_progressive->sub_8x8   = zigzag_sub_8x8_frame;
     pf_interlaced->sub_4x4    = zigzag_sub_4x4_field;
     pf_progressive->sub_4x4   = zigzag_sub_4x4_frame;
     pf_interlaced->sub_4x4ac  = zigzag_sub_4x4ac_field;
     pf_progressive->sub_4x4ac = zigzag_sub_4x4ac_frame;
-
+// 下面是各平台汇编函数加速函数，先略过
 #if HIGH_BIT_DEPTH
 #if HAVE_MMX
     if( cpu&X264_CPU_SSE2 )
