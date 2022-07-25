@@ -1683,8 +1683,8 @@ x264_t *x264_encoder_open( x264_param_t *param, void *api )
     else
         x264_cavlc_init( h );
 
-    mbcmp_init( h );
-    chroma_dsp_init( h );
+    mbcmp_init( h );// 失真衡量指标初始化
+    chroma_dsp_init( h );//色度相关函数初始化
 
     p = buf + sprintf( buf, "using cpu capabilities:" );
     for( int i = 0; x264_cpu_names[i].flags; i++ )
@@ -1718,7 +1718,7 @@ x264_t *x264_encoder_open( x264_param_t *param, void *api )
         p += sprintf( p, " none!" );
     x264_log( h, X264_LOG_INFO, "%s\n", buf );
 
-    if( x264_analyse_init_costs( h ) )
+    if( x264_analyse_init_costs( h ) )// 计算mb的代价初始化函数
         goto fail;
 
     /* Must be volatile or else GCC will optimize it out. */
@@ -1732,7 +1732,7 @@ x264_t *x264_encoder_open( x264_param_t *param, void *api )
 #endif
         goto fail;
     }
-
+    // 输出码流设置
     h->out.i_nal = 0;
     h->out.i_bitstream = x264_clip3f(
         h->param.i_width * h->param.i_height * 4
@@ -1746,7 +1746,7 @@ x264_t *x264_encoder_open( x264_param_t *param, void *api )
     CHECKED_MALLOC( h->nal_buffer, h->nal_buffer_size );
 
     CHECKED_MALLOC( h->reconfig_h, sizeof(x264_t) );
-
+    // 线程相关设置，略
     if( h->param.i_threads > 1 &&
         x264_threadpool_init( &h->threadpool, h->param.i_threads, (void*)encoder_thread_init, h ) )
         goto fail;
@@ -1812,14 +1812,14 @@ x264_t *x264_encoder_open( x264_param_t *param, void *api )
         h->param.b_opencl = 0;
 #endif
 
-    if( x264_lookahead_init( h, i_slicetype_length ) )
+    if( x264_lookahead_init( h, i_slicetype_length ) )// lookahead模块初始化
         goto fail;
 
     for( int i = 0; i < h->param.i_threads; i++ )
         if( x264_macroblock_thread_allocate( h->thread[i], 0 ) < 0 )
             goto fail;
 
-    if( x264_ratecontrol_new( h ) < 0 )
+    if( x264_ratecontrol_new( h ) < 0 )// 码率控制函数初始化
         goto fail;
 
     if( h->param.i_nal_hrd )
