@@ -56,7 +56,7 @@ static inline void pixel_avg( pixel *dst,  intptr_t i_dst_stride,
         src2 += i_src2_stride;
     }
 }
-
+// 计算两幅图片32x32mb的平均
 static inline void pixel_avg_wxh( pixel *dst,  intptr_t i_dst,
                                   pixel *src1, intptr_t i_src1,
                                   pixel *src2, intptr_t i_src2, int width, int height )
@@ -73,6 +73,7 @@ static inline void pixel_avg_wxh( pixel *dst,  intptr_t i_dst,
 
 /* Implicit weighted bipred only:
  * assumes log2_denom = 5, offset = 0, weight1 + weight2 = 64 */
+// 计算两幅图片mb的加权平均
 static inline void pixel_avg_weight_wxh( pixel *dst,  intptr_t i_dst,
                                          pixel *src1, intptr_t i_src1,
                                          pixel *src2, intptr_t i_src2, int width, int height, int i_weight1 )
@@ -168,6 +169,46 @@ static void mc_copy( pixel *src, intptr_t i_src_stride, pixel *dst, intptr_t i_d
 }
 
 #define TAPFILTER(pix, d) ((pix)[x-2*d] + (pix)[x+3*d] - 5*((pix)[x-d] + (pix)[x+2*d]) + 20*((pix)[x] + (pix)[x+d]))
+// 半像素内插算法
+// 公式:b= (E - 5F + 20G + 20H - 5I + J)/32
+// TAPFILTER参数中d=1表示水平滤波器;d=stride表示垂直滤波器。并且此时的参数重没有/32
+// dsth：水平滤波得到的半像素点(aa,bb,b,s,gg,hh)大写字母为完整像素点
+// dstv：垂直滤波的到的半像素点(cc,dd,h,m,ee,ff)
+// dstc：“水平+垂直”滤波得到的位于4个像素中间的半像素点(j)
+//          A aa B
+//
+//          C bb D
+//
+//  E   F   G  b H   I   J
+//
+//  cc  dd  h  j m  ee  ff
+//
+//  K   L   M  s N   P   Q
+//
+//          R gg S
+//
+//          T hh U
+// 剩下几个半像素点的计算关系如下：
+// m：由B、D、H、N、S、U计算
+// h：由A、C、G、M、R、T计算
+// s：由K、L、M、N、P、Q计算
+// j：由cc、dd、h、m、ee、ff计算。需要注意j点的运算量比较大，因为cc、dd、ee、ff都需要通过半像素内插方法进行计算。
+
+// 几种半像素点之间的位置关系
+// X：像素点
+// H：水平滤波半像素点
+// V：垂直滤波半像素点
+// C：中间位置半像素点
+//
+// X   H   X       X       X
+//
+// V   C
+//
+// X       X       X       X
+//
+//
+//
+// X       X       X       X
 static void hpel_filter( pixel *dsth, pixel *dstv, pixel *dstc, pixel *src,
                          intptr_t stride, int width, int height, int16_t *buf )
 {
@@ -176,15 +217,16 @@ static void hpel_filter( pixel *dsth, pixel *dstv, pixel *dstc, pixel *src,
     {
         for( int x = -2; x < width+3; x++ )
         {
+            // 垂直滤波半像素点
             int v = TAPFILTER(src,stride);
-            dstv[x] = x264_clip_pixel( (v + 16) >> 5 );
+            dstv[x] = x264_clip_pixel( (v + 16) >> 5 );// 垂直半像素点计算
             /* transform v for storage in a 16-bit integer */
-            buf[x+2] = v + pad;
+            buf[x+2] = v + pad;// 垂直半像素点储存用于计算c这种中间位置半像素点
         }
         for( int x = 0; x < width; x++ )
-            dstc[x] = x264_clip_pixel( (TAPFILTER(buf+2,1) - 32*pad + 512) >> 10 );
+            dstc[x] = x264_clip_pixel( (TAPFILTER(buf+2,1) - 32*pad + 512) >> 10 );// 中间位置半像素点计算，通过对垂直半像素点进行水平滤波得到
         for( int x = 0; x < width; x++ )
-            dsth[x] = x264_clip_pixel( (TAPFILTER(src,1) + 16) >> 5 );
+            dsth[x] = x264_clip_pixel( (TAPFILTER(src,1) + 16) >> 5 );// 水平半像素点计算
         dsth += stride;
         dstv += stride;
         dstc += stride;
@@ -613,7 +655,7 @@ void x264_mc_init( uint32_t cpu, x264_mc_functions_t *pf, int cpu_independent )
     pf->get_ref   = get_ref;// 获得匹配块
 
     pf->mc_chroma = mc_chroma;// 色度运动补偿
-    // 求平均
+    // 求加权平均，输入2幅图像mb，输出加权平均mb
     pf->avg[PIXEL_16x16]= pixel_avg_16x16;
     pf->avg[PIXEL_16x8] = pixel_avg_16x8;
     pf->avg[PIXEL_8x16] = pixel_avg_8x16;

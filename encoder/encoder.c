@@ -1416,6 +1416,7 @@ static int validate_parameters( x264_t *h, int b_open )
 
 static void mbcmp_init( x264_t *h )
 {
+    // i_subpel_refine指亚像素运动估计精度，=0是整像素运动估计那就不需要用satd，默认用sad
     int satd = !h->mb.b_lossless && h->param.analyse.i_subpel_refine > 1;
     memcpy( h->pixf.mbcmp, satd ? h->pixf.satd : h->pixf.sad_aligned, sizeof(h->pixf.mbcmp) );
     memcpy( h->pixf.mbcmp_unaligned, satd ? h->pixf.satd : h->pixf.sad, sizeof(h->pixf.mbcmp_unaligned) );
@@ -1674,10 +1675,10 @@ x264_t *x264_encoder_open( x264_param_t *param, void *api )
     // 帧扫描:h->zigzagf_progressive;场扫描:h->zigzagf_interlaced，会根据当前真实编码选择赋值zig-zag
     memcpy( &h->zigzagf, PARAM_INTERLACED ? &h->zigzagf_interlaced : &h->zigzagf_progressive, sizeof(h->zigzagf) );
     x264_mc_init( h->param.cpu, &h->mc, h->param.b_cpu_independent );// 运动补偿相关函数初始化
-    x264_quant_init( h, h->param.cpu, &h->quantf );
+    x264_quant_init( h, h->param.cpu, &h->quantf );// 量化函数初始化
     x264_deblock_init( h->param.cpu, &h->loopf, PARAM_INTERLACED );
-    x264_bitstream_init( h->param.cpu, &h->bsf );
-    if( h->param.b_cabac )
+    x264_bitstream_init( h->param.cpu, &h->bsf );// 码流处理函数初始化
+    if( h->param.b_cabac ) // 熵编码函数初始化
         x264_cabac_init( h );
     else
         x264_cavlc_init( h );

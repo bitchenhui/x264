@@ -263,7 +263,7 @@ typedef struct x264_weight_t
  * width == 8 -> height == 4 or 8 or 16
  * width == 16-> height == 8 or 16
  * */
-
+// 运动补偿结构体接口，初始化就是对这些函数接口和参数赋值
 typedef struct
 {
     void (*mc_luma)( pixel *dst, intptr_t i_dst, pixel **src, intptr_t i_src,

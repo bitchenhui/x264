@@ -107,7 +107,7 @@ void x264_bitstream_init( uint32_t cpu, x264_bitstream_function_t *pf )
 {
     memset( pf, 0, sizeof(*pf) );
 
-    pf->nal_escape = nal_escape_c;
+    pf->nal_escape = nal_escape_c;// 码流中00 00 之后添加03来区分startcode
 #if HAVE_MMX
 #if ARCH_X86_64
     pf->cabac_block_residual_internal = x264_cabac_block_residual_internal_sse2;

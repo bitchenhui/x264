@@ -407,7 +407,7 @@ level_run(16)
 #else
 #define INIT_TRELLIS(...)
 #endif
-
+// 量化初始化函数
 void x264_quant_init( x264_t *h, uint32_t cpu, x264_quant_function_t *pf )
 {
     pf->quant_8x8 = quant_8x8;
@@ -440,7 +440,7 @@ void x264_quant_init( x264_t *h, uint32_t cpu, x264_quant_function_t *pf )
     pf->coeff_level_run8 = coeff_level_run8;
     pf->coeff_level_run[  DCT_LUMA_AC] = coeff_level_run15;
     pf->coeff_level_run[ DCT_LUMA_4x4] = coeff_level_run16;
-
+// 下面是各平台的汇编函数，先略
 #if HIGH_BIT_DEPTH
 #if HAVE_MMX
     INIT_TRELLIS( sse2 );

@@ -78,8 +78,8 @@
             filePath = "../encoder/encoder.c"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "1604"
-            endingLineNumber = "1604"
+            startingLineNumber = "1605"
+            endingLineNumber = "1605"
             landmarkName = "x264_encoder_open(param, api)"
             landmarkType = "9">
             <Locations>
