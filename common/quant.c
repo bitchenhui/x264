@@ -60,7 +60,7 @@ static int quant_8x8( dctcoef dct[64], udctcoef mf[64], udctcoef bias[64] )
         QUANT_ONE( dct[i], mf[i], bias[i] );
     return !!nz;
 }
-
+// 针对4x4块的dct残差矩阵量化函数
 static int quant_4x4( dctcoef dct[16], udctcoef mf[16], udctcoef bias[16] )
 {
     int nz = 0;
@@ -410,19 +410,19 @@ level_run(16)
 // 量化初始化函数
 void x264_quant_init( x264_t *h, uint32_t cpu, x264_quant_function_t *pf )
 {
-    pf->quant_8x8 = quant_8x8;
-    pf->quant_4x4 = quant_4x4;
-    pf->quant_4x4x4 = quant_4x4x4;
+    pf->quant_8x8 = quant_8x8; // 针对8x8dct的量化
+    pf->quant_4x4 = quant_4x4; // 针对4x4dct的量化
+    pf->quant_4x4x4 = quant_4x4x4; // 一次性处理4个4x4块
     pf->quant_4x4_dc = quant_4x4_dc;
     pf->quant_2x2_dc = quant_2x2_dc;
 
-    pf->dequant_4x4 = dequant_4x4;
+    pf->dequant_4x4 = dequant_4x4; // 反量化4x4
     pf->dequant_4x4_dc = dequant_4x4_dc;
     pf->dequant_8x8 = dequant_8x8;
 
     pf->idct_dequant_2x4_dc = idct_dequant_2x4_dc;
     pf->idct_dequant_2x4_dconly = idct_dequant_2x4_dconly;
-
+    // 色度分量量化
     pf->optimize_chroma_2x2_dc = optimize_chroma_2x2_dc;
     pf->optimize_chroma_2x4_dc = optimize_chroma_2x4_dc;
 
