@@ -683,22 +683,27 @@ void x264_macroblock_deblock( x264_t *h )
 
 void x264_deblock_init( uint32_t cpu, x264_deblock_function_t *pf, int b_mbaff )
 {
+    // v指的是垂直滤波器，用于处理水平边界；h指的是水平滤波器，用于处理垂直边界
+    // 亮度-普通滤波器-边界强度Bs=1,2,3
     pf->deblock_luma[1] = deblock_v_luma_c;
     pf->deblock_luma[0] = deblock_h_luma_c;
+    // 色度
     pf->deblock_chroma[1] = deblock_v_chroma_c;
     pf->deblock_h_chroma_420 = deblock_h_chroma_c;
     pf->deblock_h_chroma_422 = deblock_h_chroma_422_c;
+    // 亮度-强滤波器-边界强度Bs=4
     pf->deblock_luma_intra[1] = deblock_v_luma_intra_c;
     pf->deblock_luma_intra[0] = deblock_h_luma_intra_c;
     pf->deblock_chroma_intra[1] = deblock_v_chroma_intra_c;
     pf->deblock_h_chroma_420_intra = deblock_h_chroma_intra_c;
     pf->deblock_h_chroma_422_intra = deblock_h_chroma_422_intra_c;
+    // mb级别帧场自适应
     pf->deblock_luma_mbaff = deblock_h_luma_mbaff_c;
     pf->deblock_chroma_420_mbaff = deblock_h_chroma_mbaff_c;
     pf->deblock_luma_intra_mbaff = deblock_h_luma_intra_mbaff_c;
     pf->deblock_chroma_420_intra_mbaff = deblock_h_chroma_intra_mbaff_c;
     pf->deblock_strength = deblock_strength_c;
-
+// 跨平台的汇编函数优化，先略
 #if HAVE_MMX
     if( cpu&X264_CPU_MMX2 )
     {

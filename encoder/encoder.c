@@ -1676,7 +1676,7 @@ x264_t *x264_encoder_open( x264_param_t *param, void *api )
     memcpy( &h->zigzagf, PARAM_INTERLACED ? &h->zigzagf_interlaced : &h->zigzagf_progressive, sizeof(h->zigzagf) );
     x264_mc_init( h->param.cpu, &h->mc, h->param.b_cpu_independent );// 运动补偿相关函数初始化
     x264_quant_init( h, h->param.cpu, &h->quantf );// 量化函数初始化
-    x264_deblock_init( h->param.cpu, &h->loopf, PARAM_INTERLACED );
+    x264_deblock_init( h->param.cpu, &h->loopf, PARAM_INTERLACED );// 去块滤波函数初始化
     x264_bitstream_init( h->param.cpu, &h->bsf );// 码流处理函数初始化
     if( h->param.b_cabac ) // 熵编码函数初始化
         x264_cabac_init( h );
