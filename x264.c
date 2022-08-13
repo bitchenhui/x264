@@ -1963,7 +1963,7 @@ static int encode( x264_param_t *param, cli_opt_t *opt )
         x264_nal_t *headers;
         int i_nal;
 
-        FAIL_IF_ERROR2( x264_encoder_headers( h, &headers, &i_nal ) < 0, "x264_encoder_headers failed\n" );
+        FAIL_IF_ERROR2( x264_encoder_headers( h, &headers, &i_nal ) < 0, "x264_encoder_headers failed\n" );// 输出sps，pps和sei等码流头信息
         FAIL_IF_ERROR2( (i_file = cli_output.write_headers( opt->hout, headers )) < 0, "error writing headers to output file\n" );
     }
 
