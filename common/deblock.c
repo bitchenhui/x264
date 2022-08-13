@@ -78,30 +78,54 @@ static const int8_t i_tc0_table[52+12*3][4] =
 /* From ffmpeg */
 static ALWAYS_INLINE void deblock_edge_luma_c( pixel *pix, intptr_t xstride, int alpha, int beta, int8_t tc0 )
 {
+    //如果xstride=stride，ystride=1
+    //就是处理纵向的6个像素
+    //对应的是方块的横向边界的滤波，即如下所示：
+    //        p2
+    //        p1
+    //        p0
+    //=====图像边界=====
+    //        q0
+    //        q1
+    //        q2
+    //
+    //如果xstride=1，ystride=stride
+    //就是处理纵向的6个像素
+    //对应的是方块的横向边界的滤波，即如下所示：
+    //          ||
+    // p2 p1 p0 || q0 q1 q2
+    //          ||
+    //          边界
+ 
+    //注意：这里乘的是xstride，这里的xstride要外层的ystride配合起来就能适配横向和纵向滤波
+    //tc0是传入的限幅值
     int p2 = pix[-3*xstride];
     int p1 = pix[-2*xstride];
     int p0 = pix[-1*xstride];
     int q0 = pix[ 0*xstride];
     int q1 = pix[ 1*xstride];
     int q2 = pix[ 2*xstride];
-
+    // 满足假边界条件，一共滤波4个像素，2内部2边界
     if( abs( p0 - q0 ) < alpha && abs( p1 - p0 ) < beta && abs( q1 - q0 ) < beta )
     {
         int tc = tc0;
         int delta;
+        // 上面2个点（p0，p2）满足条件的时候，滤波p1
+        // int x264_clip3( int v, int i_min, int i_max )用于限幅
         if( abs( p2 - p0 ) < beta )
         {
             if( tc0 )
                 pix[-2*xstride] = p1 + x264_clip3( (( p2 + ((p0 + q0 + 1) >> 1)) >> 1) - p1, -tc0, tc0 );
             tc++;
         }
+        // 下面2个点（q0，q2）满足条件的时候，滤波q1
         if( abs( q2 - q0 ) < beta )
         {
             if( tc0 )
                 pix[ 1*xstride] = q1 + x264_clip3( (( q2 + ((p0 + q0 + 1) >> 1)) >> 1) - q1, -tc0, tc0 );
             tc++;
         }
-
+        // 边界值滤波
         delta = x264_clip3( (((q0 - p0 ) * 4) + (p1 - q1) + 4) >> 3, -tc, tc );
         pix[-1*xstride] = x264_clip_pixel( p0 + delta );    /* p0' */
         pix[ 0*xstride] = x264_clip_pixel( q0 - delta );    /* q0' */
@@ -109,13 +133,17 @@ static ALWAYS_INLINE void deblock_edge_luma_c( pixel *pix, intptr_t xstride, int
 }
 static inline void deblock_luma_c( pixel *pix, intptr_t xstride, intptr_t ystride, int alpha, int beta, int8_t *tc0 )
 {
+    // 垂直滤波器传入:xstride=stride;ystride=1
+    // 水平滤波器传入:xstride=1;ystride=stride
     for( int i = 0; i < 4; i++ )
     {
+        // 限幅小于0直接跳过 不滤波
         if( tc0[i] < 0 )
         {
             pix += 4*ystride;
             continue;
         }
+        // 一次性滤波4行/列像素，每一次又对4个像素滤波
         for( int d = 0; d < 4; d++, pix += ystride )
             deblock_edge_luma_c( pix, xstride, alpha, beta, tc0[i] );
     }
@@ -125,12 +153,17 @@ static void deblock_h_luma_mbaff_c( pixel *pix, intptr_t stride, int alpha, int 
     for( int d = 0; d < 8; d++, pix += stride )
         deblock_edge_luma_c( pix, 1, alpha, beta, tc0[d>>1] );
 }
+// 垂直滤波器
 static void deblock_v_luma_c( pixel *pix, intptr_t stride, int alpha, int beta, int8_t *tc0 )
 {
+    // deblock_luma_c:通用滤波器
+    // xstride = stride;ystride = 1
     deblock_luma_c( pix, stride, 1, alpha, beta, tc0 );
 }
+// 水平滤波器
 static void deblock_h_luma_c( pixel *pix, intptr_t stride, int alpha, int beta, int8_t *tc0 )
 {
+    // xstride = 1;ystride = stride
     deblock_luma_c( pix, 1, stride, alpha, beta, tc0 );
 }
 
