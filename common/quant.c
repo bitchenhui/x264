@@ -61,6 +61,9 @@ static int quant_8x8( dctcoef dct[64], udctcoef mf[64], udctcoef bias[64] )
     return !!nz;
 }
 // 针对4x4块的dct残差矩阵量化函数
+// dct是输入也是输出。输入为dct变换后的系数矩阵；输出为量化后的量化系数矩阵
+// mf是为了简便运算构造的6周期变换的矩阵，其中包含了dct变换的ef系数。最终mf是qp的函数，变量也就在这里
+// bias是偏移量，为了改善视觉效果。
 static int quant_4x4( dctcoef dct[16], udctcoef mf[16], udctcoef bias[16] )
 {
     int nz = 0;
@@ -68,7 +71,7 @@ static int quant_4x4( dctcoef dct[16], udctcoef mf[16], udctcoef bias[16] )
         QUANT_ONE( dct[i], mf[i], bias[i] );
     return !!nz;
 }
-
+// 连续做4次 4x4量化s
 static int quant_4x4x4( dctcoef dct[4][16], udctcoef mf[16], udctcoef bias[16] )
 {
     int nza = 0;
