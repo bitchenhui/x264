@@ -1413,7 +1413,7 @@ static int validate_parameters( x264_t *h, int b_open )
 
     return 0;
 }
-
+// 决定像素比较用sad还是satd
 static void mbcmp_init( x264_t *h )
 {
     // i_subpel_refine指亚像素运动估计精度，=0是整像素运动估计那就不需要用satd，默认用sad
