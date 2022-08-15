@@ -3336,12 +3336,13 @@ int x264_encoder_invalidate_reference( x264_t *h, int64_t pts )
  *       B      5   2*4
  *       B      6   2*5
  ****************************************************************************/
+// 编码一帧数据
 int     x264_encoder_encode( x264_t *h,
                              x264_nal_t **pp_nal, int *pi_nal,
                              x264_picture_t *pic_in,
                              x264_picture_t *pic_out )
 {
-    x264_t *thread_current, *thread_prev, *thread_oldest;
+    x264_t *thread_current, *thread_prev, *thread_oldest;// 当前线程，前一个线程，后一个线程
     int i_nal_type, i_nal_ref_idc, i_global_qp;
     int overhead = NALU_OVERHEAD;
 

@@ -1837,19 +1837,20 @@ static void parse_qpfile( cli_opt_t *opt, x264_picture_t *pic, int i_frame )
 
 static int encode_frame( x264_t *h, hnd_t hout, x264_picture_t *pic, int64_t *last_dts )
 {
-    x264_picture_t pic_out;
-    x264_nal_t *nal;
+    x264_picture_t pic_out;// 编码后输出帧
+    x264_nal_t *nal;// nal数据包
     int i_nal;
     int i_frame_size = 0;
-
-    i_frame_size = x264_encoder_encode( h, &nal, &i_nal, pic, &pic_out );
+    // x264_encoder_encode输入参数:编码整体结构体;nal;输入图像;输出图像
+    i_frame_size = x264_encoder_encode( h, &nal, &i_nal, pic, &pic_out );// 编码单帧
 
     FAIL_IF_ERROR( i_frame_size < 0, "x264_encoder_encode failed\n" );
 
     if( i_frame_size )
     {
+        // 将编码后的码流装入输出流
         i_frame_size = cli_output.write_frame( hout, nal[0].p_payload, i_frame_size, &pic_out );
-        *last_dts = pic_out.i_dts;
+        *last_dts = pic_out.i_dts;// 显示时间戳
     }
 
     return i_frame_size;
