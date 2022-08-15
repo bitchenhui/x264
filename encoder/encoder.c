@@ -2116,18 +2116,21 @@ int x264_encoder_headers( x264_t *h, x264_nal_t **pp_nal, int *pi_nal )
     /* Write SEI, SPS and PPS. */
 
     /* generate sequence parameters */
+    // sps 每个nalu的输出都调用了nal_start和nal_end
     nal_start( h, NAL_SPS, NAL_PRIORITY_HIGHEST );
     x264_sps_write( &h->out.bs, h->sps );
     if( nal_end( h ) )
         return -1;
 
     /* generate picture parameters */
+    // pps
     nal_start( h, NAL_PPS, NAL_PRIORITY_HIGHEST );
     x264_pps_write( &h->out.bs, h->sps, h->pps );
     if( nal_end( h ) )
         return -1;
 
     /* identify ourselves */
+    // sei
     nal_start( h, NAL_SEI, NAL_PRIORITY_DISPOSABLE );
     if( x264_sei_version_write( h, &h->out.bs ) )
         return -1;
@@ -4204,7 +4207,7 @@ static void print_intra( int64_t *i_mb_count, double i_count, int b_print_pcm, c
 }
 
 /****************************************************************************
- * x264_encoder_close:
+ * x264_encoder_close:关闭编码器，并输出一些统计信息
  ****************************************************************************/
 void    x264_encoder_close  ( x264_t *h )
 {
@@ -4256,6 +4259,9 @@ void    x264_encoder_close  ( x264_t *h )
             double dur =  h->stat.f_frame_duration[i_slice];
             if( h->param.analyse.b_psnr )
             {
+                
+                // 输出统计信息-包含PSNR
+                // 注意PSNR都是通过SSD换算过来的，换算方法就是调用x264_psnr()方法
                 x264_log( h, X264_LOG_INFO,
                           "frame %c:%-5d Avg QP:%5.2f  size:%6.0f  PSNR Mean Y:%5.2f U:%5.2f V:%5.2f Avg:%5.2f Global:%5.2f\n",
                           slice_type_to_char[i_slice],
@@ -4268,6 +4274,7 @@ void    x264_encoder_close  ( x264_t *h )
             }
             else
             {
+                // 输出统计信息-不包含PSNR
                 x264_log( h, X264_LOG_INFO,
                           "frame %c:%-5d Avg QP:%5.2f  size:%6.0f\n",
                           slice_type_to_char[i_slice],
@@ -4279,6 +4286,7 @@ void    x264_encoder_close  ( x264_t *h )
     }
     if( h->param.i_bframe && h->stat.i_frame_count[SLICE_TYPE_B] )
     {
+        // 输出b帧相关信息
         char *p = buf;
         int den = 0;
         // weight by number of frames (including the I/P-frames) that are in a sequence of N B-frames
@@ -4301,6 +4309,8 @@ void    x264_encoder_close  ( x264_t *h )
     {
         int64_t *i_mb_count = h->stat.i_mb_count[SLICE_TYPE_I];
         double i_count = (double)h->stat.i_frame_count[SLICE_TYPE_I] * h->mb.i_mb_count / 100.0;
+        // Intra宏块信息-存于buf
+        // 从左到右3个信息，依次为I16x16,I8x8,I4x4
         print_intra( i_mb_count, i_count, b_print_pcm, buf );
         x264_log( h, X264_LOG_INFO, "mb I  %s\n", buf );
     }
@@ -4310,6 +4320,9 @@ void    x264_encoder_close  ( x264_t *h )
         double i_count = (double)h->stat.i_frame_count[SLICE_TYPE_P] * h->mb.i_mb_count / 100.0;
         int64_t *i_mb_size = i_mb_count_size[SLICE_TYPE_P];
         print_intra( i_mb_count, i_count, b_print_pcm, buf );
+        // Intra宏块信息-放在最前面
+        // 后面添加P宏块信息
+        // 从左到右6个信息，依次为P16x16, P16x8+P8x16, P8x8, P8x4+P4x8, P4x4, PSKIP
         x264_log( h, X264_LOG_INFO,
                   "mb P  %s  P16..4: %4.1f%% %4.1f%% %4.1f%% %4.1f%% %4.1f%%    skip:%4.1f%%\n",
                   buf,
@@ -4341,6 +4354,14 @@ void    x264_encoder_close  ( x264_t *h )
         list_count[2] += h->stat.i_mb_partition[SLICE_TYPE_B][D_BI_8x8];
         i_mb_count[B_DIRECT] += (h->stat.i_mb_partition[SLICE_TYPE_B][D_DIRECT_8x8]+2)/4;
         i_mb_list_count = (list_count[0] + list_count[1] + list_count[2]) / 100.0;
+        // Intra宏块信息-放在最前面
+        // 后面添加B宏块信息
+        // 从左到右5个信息，依次为B16x16, B16x8+B8x16, B8x8, BDIRECT, BSKIP
+
+        // SKIP和DIRECT区别
+        // P_SKIP的CBP为0,无像素残差，无运动矢量残
+        // B_SKIP宏块的模式为B_DIRECT且CBP为0,无像素残差，无运动矢量残
+        // B_DIRECT的CBP不为0,有像素残差，无运动矢量残
         sprintf( buf + strlen(buf), "  B16..8: %4.1f%% %4.1f%% %4.1f%%  direct:%4.1f%%  skip:%4.1f%%",
                  i_mb_size[PIXEL_16x16] / (i_count*4),
                  (i_mb_size[PIXEL_16x8] + i_mb_size[PIXEL_8x16]) / (i_count*4),
@@ -4429,6 +4450,19 @@ void    x264_encoder_close  ( x264_t *h )
                       h->stat.i_mb_cbp[0] * 100.0 / (i_all_intra*4), buf );
         }
 
+        /*
+         * 帧内预测信息
+         * 从上到下分别为I16x16,I8x8,I4x4
+         * 从左到右顺序为Vertical, Horizontal, DC, Plane ....
+         *
+         * 示例
+         *
+         * x264 [info]: i16 v,h,dc,p: 21% 25%  7% 48%
+         * x264 [info]: i8 v,h,dc,ddl,ddr,vr,hd,vl,hu: 25% 23% 13%  6%  5%  5%  6%  8% 10%
+         * x264 [info]: i4 v,h,dc,ddl,ddr,vr,hd,vl,hu: 22% 20%  9%  7%  7%  8%  8%  7% 12%
+         * x264 [info]: i8c dc,h,v,p: 43% 20% 27% 10%
+         *
+         */
         int64_t fixed_pred_modes[4][9] = {{0}};
         int64_t sum_pred_modes[4] = {0};
         for( int i = 0; i <= I_PRED_16x16_DC_128; i++ )
@@ -4520,7 +4554,7 @@ void    x264_encoder_close  ( x264_t *h )
         else
             x264_log( h, X264_LOG_INFO, "kb/s:%.2f\n", f_bitrate );
     }
-
+    // 各种编码器相关释放
     /* rc */
     x264_ratecontrol_delete( h );
 

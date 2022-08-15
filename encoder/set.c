@@ -306,6 +306,7 @@ void x264_sps_init_scaling_list( x264_sps_t *sps, x264_param_t *param )
 void x264_sps_write( bs_t *s, x264_sps_t *sps )
 {
     bs_realign( s );
+    // profile 8bit
     bs_write( s, 8, sps->i_profile_idc );
     bs_write1( s, sps->b_constraint_set0 );
     bs_write1( s, sps->b_constraint_set1 );
@@ -313,16 +314,18 @@ void x264_sps_write( bs_t *s, x264_sps_t *sps )
     bs_write1( s, sps->b_constraint_set3 );
 
     bs_write( s, 4, 0 );    /* reserved */
-
+    // level 8bit
     bs_write( s, 8, sps->i_level_idc );
-
+    // sps id
     bs_write_ue( s, sps->i_id );
 
     if( sps->i_profile_idc >= PROFILE_HIGH )
     {
+        // 色度取样模式:0单色;1 420;2 422;3 444
         bs_write_ue( s, sps->i_chroma_format_idc );
         if( sps->i_chroma_format_idc == CHROMA_444 )
             bs_write1( s, 0 ); // separate_colour_plane_flag
+        // 位深
         bs_write_ue( s, BIT_DEPTH-8 ); // bit_depth_luma_minus8
         bs_write_ue( s, BIT_DEPTH-8 ); // bit_depth_chroma_minus8
         bs_write1( s, sps->b_qpprime_y_zero_transform_bypass );
@@ -347,13 +350,16 @@ void x264_sps_write( bs_t *s, x264_sps_t *sps )
             }
         }
     }
-
+    // frame number的上限
     bs_write_ue( s, sps->i_log2_max_frame_num - 4 );
+    // 播放顺序类别
     bs_write_ue( s, sps->i_poc_type );
     if( sps->i_poc_type == 0 )
         bs_write_ue( s, sps->i_log2_max_poc_lsb - 4 );
+    // 指定参考针队列可以达到的最大长度，解码器会根据这个长度开辟缓存，用于存已解码的参考帧。h264规定参考帧队列最大为16.
     bs_write_ue( s, sps->i_num_ref_frames );
     bs_write1( s, sps->b_gaps_in_frame_num_value_allowed );
+    // 以mb16*16为单位存储图像的宽高
     bs_write_ue( s, sps->i_mb_width - 1 );
     bs_write_ue( s, (sps->i_mb_height >> !sps->b_frame_mbs_only) - 1);
     bs_write1( s, sps->b_frame_mbs_only );
@@ -371,7 +377,7 @@ void x264_sps_write( bs_t *s, x264_sps_t *sps )
         bs_write_ue( s, sps->crop.i_top    >> v_shift );
         bs_write_ue( s, sps->crop.i_bottom >> v_shift );
     }
-
+    // vui信息，先略，这些都可以和sps声明一一对应，需要时再去看即可
     bs_write1( s, sps->b_vui );
     if( sps->b_vui )
     {
@@ -472,7 +478,7 @@ void x264_sps_write( bs_t *s, x264_sps_t *sps )
             bs_write_ue( s, sps->vui.i_max_dec_frame_buffering );
         }
     }
-
+    // rbsp拖尾 字节对齐，写入1个bit1及若干个(0-7)bit0
     bs_rbsp_trailing( s );
     bs_flush( s );
 }
@@ -506,18 +512,22 @@ void x264_pps_init( x264_pps_t *pps, int i_id, x264_param_t *param, x264_sps_t *
 void x264_pps_write( bs_t *s, x264_sps_t *sps, x264_pps_t *pps )
 {
     bs_realign( s );
+    // pps id
     bs_write_ue( s, pps->i_id );
+    // 该pps引用的sps的id
     bs_write_ue( s, pps->i_sps_id );
-
+    // 熵编码标志，0cavlc;1cabac
     bs_write1( s, pps->b_cabac );
     bs_write1( s, pps->b_pic_order );
     bs_write_ue( s, pps->i_num_slice_groups - 1 );
 
     bs_write_ue( s, pps->i_num_ref_idx_l0_default_active - 1 );
     bs_write_ue( s, pps->i_num_ref_idx_l1_default_active - 1 );
+    // p slice是否使用加权预测
     bs_write1( s, pps->b_weighted_pred );
+    // b slice是否使用加权预测
     bs_write( s, 2, pps->b_weighted_bipred );
-
+    // qp
     bs_write_se( s, pps->i_pic_init_qp - 26 - QP_BD_OFFSET );
     bs_write_se( s, pps->i_pic_init_qs - 26 - QP_BD_OFFSET );
     bs_write_se( s, pps->i_chroma_qp_index_offset );
@@ -567,7 +577,7 @@ void x264_pps_write( bs_t *s, x264_sps_t *sps, x264_pps_t *pps )
         }
         bs_write_se( s, pps->i_chroma_qp_index_offset );
     }
-
+    // rbsp拖尾数据
     bs_rbsp_trailing( s );
     bs_flush( s );
 }
@@ -590,7 +600,7 @@ void x264_sei_recovery_point_write( x264_t *h, bs_t *s, int recovery_frame_cnt )
 
     x264_sei_write( s, tmp_buf, bs_pos( &q ) / 8, SEI_RECOVERY_POINT );
 }
-
+//输出sei,包含配置信息
 int x264_sei_version_write( x264_t *h, bs_t *s )
 {
     // random ID number generated according to ISO-11578
@@ -599,6 +609,7 @@ int x264_sei_version_write( x264_t *h, bs_t *s )
         0xdc, 0x45, 0xe9, 0xbd, 0xe6, 0xd9, 0x48, 0xb7,
         0x96, 0x2c, 0xd8, 0x20, 0xd9, 0x23, 0xee, 0xef
     };
+    // 把配置信息转换成string
     char *opts = x264_param2string( &h->param, 0 );
     char *payload;
     int length;
@@ -608,11 +619,12 @@ int x264_sei_version_write( x264_t *h, bs_t *s )
     CHECKED_MALLOC( payload, 200 + strlen( opts ) );
 
     memcpy( payload, uuid, 16 );
+    // 这里可以区别填入一些qq的版本信息等
     sprintf( payload+16, "x264 - core %d%s - H.264/MPEG-4 AVC codec - "
              "Copy%s 2003-2021 - http://www.videolan.org/x264.html - options: %s",
              X264_BUILD, X264_VERSION, HAVE_GPL?"left":"right", opts );
     length = strlen(payload)+1;
-
+    // 输出sei，数据类型为USER_DATA_UNREGISTERE
     x264_sei_write( s, (uint8_t *)payload, length, SEI_USER_DATA_UNREGISTERED );
 
     x264_free( opts );
