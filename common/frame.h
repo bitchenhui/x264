@@ -33,51 +33,51 @@
 #define PADV 32
 #define PADH_ALIGN X264_MAX( PADH, NATIVE_ALIGN / SIZEOF_PIXEL )
 #define PADH2 (PADH_ALIGN + PADH)
-
+// x264_frame是编码内部最重要的结构体，基本涉及图像帧编解码过程的参数
 typedef struct x264_frame
 {
     /* */
-    uint8_t *base;       /* Base pointer for all malloced data in this frame. */
-    int     i_poc;
+    uint8_t *base;       /* Base pointer for all malloced data in this frame. 在此帧中所有已分配数据的基地址指针*/
+    int     i_poc;// poc 视频帧播放顺序号
     int     i_delta_poc[2];
-    int     i_type;
-    int     i_forced_type;
-    int     i_qpplus1;
-    int64_t i_pts;
-    int64_t i_dts;
+    int     i_type;// 帧类型
+    int     i_forced_type; // 帧强制转换类型
+    int     i_qpplus1;// qp+1
+    int64_t i_pts;// pts画面显示时间戳
+    int64_t i_dts;// dts帧解码时间戳
     int64_t i_reordered_pts;
-    int64_t i_duration;  /* in SPS time_scale units (i.e 2 * timebase units) used for vfr */
+    int64_t i_duration;  /* in SPS time_scale units (i.e 2 * timebase units) used for vfr 用于可变帧率*/
     float   f_duration;  /* in seconds */
     int64_t i_cpb_duration;
     int64_t i_cpb_delay; /* in SPS time_scale units (i.e 2 * timebase units) */
     int64_t i_dpb_output_delay;
     x264_param_t *param;
 
-    int     i_frame;     /* Presentation frame number */
-    int     i_coded;     /* Coded frame number */
+    int     i_frame;     /* Presentation frame number 显示帧序号*/
+    int     i_coded;     /* Coded frame number 已编码帧序号*/
     int64_t i_field_cnt; /* Presentation field count */
     int     i_frame_num; /* 7.4.3 frame_num */
     int     b_kept_as_ref;
     int     i_pic_struct;
-    int     b_keyframe;
+    int     b_keyframe; // 是否为关键帧
     uint8_t b_fdec;
-    uint8_t b_last_minigop_bframe; /* this frame is the last b in a sequence of bframes */
-    uint8_t i_bframes;   /* number of bframes following this nonb in coded order */
-    float   f_qp_avg_rc; /* QPs as decided by ratecontrol */
-    float   f_qp_avg_aq; /* QPs as decided by AQ in addition to ratecontrol */
+    uint8_t b_last_minigop_bframe; /* this frame is the last b in a sequence of bframes gop内是否为最后一个b帧*/
+    uint8_t i_bframes;   /* number of bframes following this nonb in coded order 编码中非b帧之间b帧个数*/
+    float   f_qp_avg_rc; /* QPs as decided by ratecontrol rc控制确定的qp*/
+    float   f_qp_avg_aq; /* QPs as decided by AQ in addition to ratecontrol 由rc和aq算法共同确定的qp*/
     float   f_crf_avg;   /* Average effective CRF for this frame */
     int     i_poc_l0ref0; /* poc of first refframe in L0, used to check if direct temporal is possible */
 
     /* YUV buffer */
-    int     i_csp; /* Internal csp */
-    int     i_plane;
-    int     i_stride[3];
+    int     i_csp; /* Internal csp yuv颜色空间*/
+    int     i_plane;// yuv平面下标
+    int     i_stride[3];// 步幅
     int     i_width[3];
     int     i_lines[3];
     int     i_stride_lowres;
     int     i_width_lowres;
     int     i_lines_lowres;
-    pixel *plane[3];
+    pixel *plane[3];// yuv数据
     pixel *plane_fld[3];
     pixel *filtered[3][4]; /* plane[0], H, V, HV */
     pixel *filtered_fld[3][4];
@@ -92,14 +92,14 @@ typedef struct x264_frame
 
     x264_weight_t weight[X264_REF_MAX][3]; /* [ref_index][plane] */
     pixel *weighted[X264_REF_MAX]; /* plane[0] weighted of the reference frames */
-    int b_duplicate;
+    int b_duplicate;// 是否为副本
     struct x264_frame *orig;
 
-    /* motion data */
-    int8_t  *mb_type;
-    uint8_t *mb_partition;
-    int16_t (*mv[2])[2];
-    int16_t (*mv16x16)[2];
+    /* motion data 运动向量数据*/
+    int8_t  *mb_type;// 宏块类别
+    uint8_t *mb_partition;// 宏块分割
+    int16_t (*mv[2])[2];// 运动向量数据
+    int16_t (*mv16x16)[2];// 16*16mb的运动向量
     int16_t (*lowres_mvs[2][X264_BFRAME_MAX+1])[2];
     uint8_t *field;
     uint8_t *effective_qp;
@@ -131,11 +131,11 @@ typedef struct x264_frame
     float   *f_row_qscale;
     float   *f_qp_offset;
     float   *f_qp_offset_aq;
-    int     b_intra_calculated;
-    uint16_t *i_intra_cost;
+    int     b_intra_calculated;// 是否帧内编码计算
+    uint16_t *i_intra_cost; // 帧内编码代价
     uint16_t *i_propagate_cost;
     uint16_t *i_inv_qscale_factor;
-    int     b_scenecut; /* Set to zero if the frame cannot possibly be part of a real scenecut. */
+    int     b_scenecut; /* Set to zero if the frame cannot possibly be part of a real scenecut.是否使用场景切换 */
     float   f_weighted_cost_delta[X264_BFRAME_MAX+2];
     uint32_t i_pixel_sum[3];
     uint64_t i_pixel_ssd[3];
@@ -168,7 +168,7 @@ typedef struct x264_frame
     int     b_corrupt;
 
     /* user sei */
-    x264_sei_t extra_sei;
+    x264_sei_t extra_sei;// sei数据
 
     /* user data */
     void *opaque;

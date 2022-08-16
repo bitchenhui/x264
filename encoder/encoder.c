@@ -3343,8 +3343,8 @@ int     x264_encoder_encode( x264_t *h,
                              x264_picture_t *pic_out )
 {
     x264_t *thread_current, *thread_prev, *thread_oldest;// 当前线程，前一个线程，后一个线程
-    int i_nal_type, i_nal_ref_idc, i_global_qp;
-    int overhead = NALU_OVERHEAD;
+    int i_nal_type, i_nal_ref_idc, i_global_qp;// NAL类型，NAL优先级，全局QP
+    int overhead = NALU_OVERHEAD;// 5 startcode和NAL类型一共占5字节/frame
 
 #if HAVE_OPENCL
     if( h->opencl.b_fatal_error )
@@ -3357,9 +3357,9 @@ int     x264_encoder_encode( x264_t *h,
         h->i_thread_phase = (h->i_thread_phase + 1) % h->i_thread_frames;
         thread_current = h->thread[ h->i_thread_phase ];
         thread_oldest  = h->thread[ (h->i_thread_phase + 1) % h->i_thread_frames ];
-        thread_sync_context( thread_current, thread_prev );
-        x264_thread_sync_ratecontrol( thread_current, thread_prev, thread_oldest );
-        h = thread_current;
+        thread_sync_context( thread_current, thread_prev );// 协调3个线程间的同步关系
+        x264_thread_sync_ratecontrol( thread_current, thread_prev, thread_oldest );// 协调3个线程间的同步关系
+        h = thread_current;// 将编码所需相关参数赋值给h
     }
     else
     {
@@ -3375,40 +3375,43 @@ int     x264_encoder_encode( x264_t *h,
     /* ------------------- Setup new frame from picture -------------------- */
     if( pic_in != NULL )
     {
-        if( h->lookahead->b_exit_thread )
+        if( h->lookahead->b_exit_thread )// lookahead线程退出标志位
         {
             x264_log( h, X264_LOG_ERROR, "lookahead thread is already stopped\n" );
             return -1;
         }
 
         /* 1: Copy the picture to a frame and move it to a buffer */
-        x264_frame_t *fenc = x264_frame_pop_unused( h, 0 );
+        // 获取fenc存储空间，用于存放待编码帧
+        x264_frame_t *fenc = x264_frame_pop_unused( h, 0 );// 对frame结构体初始化空间
         if( !fenc )
             return -1;
-
+        // 外部像素数据传递到内部系统
+        // pic_in(外部结构体x264_picture_t)到fenc(内部结构体x264_frame_t)
+        // 根据pic_in中图像颜色空间情况进行数据复制
         if( x264_frame_copy_picture( h, fenc, pic_in ) < 0 )
             return -1;
-
+        // 确保宽高都是16的整数倍
         if( h->param.i_width != 16 * h->mb.i_mb_width ||
             h->param.i_height != 16 * h->mb.i_mb_height )
-            x264_frame_expand_border_mod16( h, fenc );
+            x264_frame_expand_border_mod16( h, fenc );// 如果宽高非16整数倍则进行边界处理，扩展至16整数倍
 
         fenc->i_frame = h->frames.i_input++;
 
-        if( fenc->i_frame == 0 )
+        if( fenc->i_frame == 0 )// 第一帧
             h->frames.i_first_pts = fenc->i_pts;
         if( h->frames.i_bframe_delay && fenc->i_frame == h->frames.i_bframe_delay )
             h->frames.i_bframe_delay_time = fenc->i_pts - h->frames.i_first_pts;
 
         if( h->param.b_vfr_input && fenc->i_pts <= h->frames.i_largest_pts )
             x264_log( h, X264_LOG_WARNING, "non-strictly-monotonic PTS\n" );
-
+        // 更新最大pts
         h->frames.i_second_largest_pts = h->frames.i_largest_pts;
         h->frames.i_largest_pts = fenc->i_pts;
-
+        // 图像类型参数校验保护
         if( (fenc->i_pic_struct < PIC_STRUCT_AUTO) || (fenc->i_pic_struct > PIC_STRUCT_TRIPLE) )
             fenc->i_pic_struct = PIC_STRUCT_AUTO;
-
+        // 帧场类型选择
         if( fenc->i_pic_struct == PIC_STRUCT_AUTO )
         {
 #if HAVE_INTERLACED
@@ -3424,7 +3427,7 @@ int     x264_encoder_encode( x264_t *h,
             else
                 fenc->i_pic_struct = PIC_STRUCT_PROGRESSIVE;
         }
-
+        // 宏块级rc是否开启；
         if( h->param.rc.b_mb_tree && h->param.rc.b_stat_read )
         {
             if( x264_macroblock_tree_read( h, fenc, pic_in->prop.quant_offsets ) )
@@ -3434,12 +3437,13 @@ int     x264_encoder_encode( x264_t *h,
             x264_adaptive_quant_frame( h, fenc, pic_in->prop.quant_offsets );
 
         if( pic_in->prop.quant_offsets_free )
-            pic_in->prop.quant_offsets_free( pic_in->prop.quant_offsets );
-
+            pic_in->prop.quant_offsets_free( pic_in->prop.quant_offsets );// 自适应qp
+        // 降低分辨率处理，线性内插
         if( h->frames.b_have_lowres )
             x264_frame_init_lowres( h, fenc );
 
         /* 2: Place the frame into the queue for its slice type decision */
+        // 初始化lookahead线程，将fenc放入lookahead.next.list[]队列，等待确定帧类型
         x264_lookahead_put_frame( h, fenc );
 
         if( h->frames.i_input <= h->frames.i_delay + 1 - h->i_thread_frames )
@@ -3452,26 +3456,27 @@ int     x264_encoder_encode( x264_t *h,
     else
     {
         /* signal kills for lookahead thread */
-        x264_pthread_mutex_lock( &h->lookahead->ifbuf.mutex );
+        x264_pthread_mutex_lock( &h->lookahead->ifbuf.mutex );// 加锁
         h->lookahead->b_exit_thread = 1;
         x264_pthread_cond_broadcast( &h->lookahead->ifbuf.cv_fill );
-        x264_pthread_mutex_unlock( &h->lookahead->ifbuf.mutex );
+        x264_pthread_mutex_unlock( &h->lookahead->ifbuf.mutex );// 解锁
     }
 
-    h->i_frame++;
+    h->i_frame++;// 编码帧号
     /* 3: The picture is analyzed in the lookahead */
     if( !h->frames.current[0] )
-        x264_lookahead_get_frames( h );
+        x264_lookahead_get_frames( h );// 在lookahead线程中分析图像帧，该函数调用了x264_slicetype_decide()
+    // x264_slicetype_analyse()和x264_slicetype_frame_cost()等函数确认最终的帧类型信息，并将帧放入了frames.current[]队列
 
     if( !h->frames.current[0] && x264_lookahead_is_empty( h ) )
         return encoder_frame_end( thread_oldest, thread_current, pp_nal, pi_nal, pic_out );
 
     /* ------------------- Get frame to be encoded ------------------------- */
     /* 4: get picture to encode */
-    h->fenc = x264_frame_shift( h->frames.current );
+    h->fenc = x264_frame_shift( h->frames.current );// 从frames.current[]队列中取出1帧用于编码并更新current队列，最终汇总的结构体还是h
 
     /* If applicable, wait for previous frame reconstruction to finish */
-    if( h->param.b_sliced_threads )
+    if( h->param.b_sliced_threads )// 判断是否使用基于多slice的多线程，若使用则需要等待上一帧图像重建完成
         if( threadpool_wait_all( h ) < 0 )
             return -1;
 
@@ -3492,14 +3497,16 @@ int     x264_encoder_encode( x264_t *h,
             h->fenc->param = NULL;
         }
     }
-    x264_ratecontrol_zone_init( h );
+    x264_ratecontrol_zone_init( h );// x264_t结构体内rc部分初始化
 
     // ok to call this before encoding any frames, since the initial values of fdec have b_kept_as_ref=0
-    if( reference_update( h ) )
+    // 更新参考帧队列frames.reference[]，若为b帧则不更新
+    // 重建帧fdec移植参考帧列表，新建一个fdec
+    if( reference_update( h ) )// 更新参考帧队列
         return -1;
-    h->fdec->i_lines_completed = -1;
+    h->fdec->i_lines_completed = -1;// 完成多少行像素
 
-    if( !IS_X264_TYPE_I( h->fenc->i_type ) )
+    if( !IS_X264_TYPE_I( h->fenc->i_type ) )// 判断是否为i帧，非i帧继续
     {
         int valid_refs_left = 0;
         for( int i = 0; h->frames.reference[i]; i++ )
@@ -3513,10 +3520,10 @@ int     x264_encoder_encode( x264_t *h,
         }
     }
 
-    if( h->fenc->b_keyframe )
+    if( h->fenc->b_keyframe )// 判断是否为关键帧，关键帧继续
     {
         h->frames.i_last_keyframe = h->fenc->i_frame;
-        if( h->fenc->i_type == X264_TYPE_IDR )
+        if( h->fenc->i_type == X264_TYPE_IDR )// 是否idr帧
         {
             h->i_frame_num = 0;
             h->frames.i_last_idr = h->fenc->i_frame;
@@ -3530,14 +3537,14 @@ int     x264_encoder_encode( x264_t *h,
     h->fenc->i_poc = 2 * ( h->fenc->i_frame - X264_MAX( h->frames.i_last_idr, 0 ) );
 
     /* ------------------- Setup frame context ----------------------------- */
-    /* 5: Init data dependent of frame type */
+    /* 5: Init data dependent of frame type 初始化数据（依赖于帧类型）*/
     if( h->fenc->i_type == X264_TYPE_IDR )
     {
         /* reset ref pictures */
         i_nal_type    = NAL_SLICE_IDR;
         i_nal_ref_idc = NAL_PRIORITY_HIGHEST;
         h->sh.i_type = SLICE_TYPE_I;
-        reference_reset( h );
+        reference_reset( h );// idr帧清空参考帧列表
         h->frames.i_poc_last_open_gop = -1;
     }
     else if( h->fenc->i_type == X264_TYPE_I )
@@ -3545,7 +3552,7 @@ int     x264_encoder_encode( x264_t *h,
         i_nal_type    = NAL_SLICE;
         i_nal_ref_idc = NAL_PRIORITY_HIGH; /* Not completely true but for now it is (as all I/P are kept as ref)*/
         h->sh.i_type = SLICE_TYPE_I;
-        reference_hierarchy_reset( h );
+        reference_hierarchy_reset( h );// 如果是非IDR的I帧、P帧、B帧（可做为参考帧），调用该函数
         if( h->param.b_open_gop )
             h->frames.i_poc_last_open_gop = h->fenc->b_keyframe ? h->fenc->i_poc : -1;
     }
@@ -3570,7 +3577,7 @@ int     x264_encoder_encode( x264_t *h,
         i_nal_ref_idc = NAL_PRIORITY_DISPOSABLE;
         h->sh.i_type = SLICE_TYPE_B;
     }
-
+    // 重建帧和编码帧的赋值
     h->fdec->i_type = h->fenc->i_type;
     h->fdec->i_frame = h->fenc->i_frame;
     h->fenc->b_kept_as_ref =
@@ -3597,10 +3604,10 @@ int     x264_encoder_encode( x264_t *h,
 
     /* ------------------- Init                ----------------------------- */
     /* build ref list 0/1 */
-    reference_build_list( h, h->fdec->i_poc );
+    reference_build_list( h, h->fdec->i_poc );// 参考帧队列（List[0]/list[1]）建立
 
     /* ---------------------- Write the bitstream -------------------------- */
-    /* Init bitstream context */
+    /* Init bitstream context 用于码流输出*/
     if( h->param.b_sliced_threads )
     {
         for( int i = 0; i < h->param.i_threads; i++ )
@@ -3628,7 +3635,7 @@ int     x264_encoder_encode( x264_t *h,
         else
             pic_type = 7;
 
-        nal_start( h, NAL_AUD, NAL_PRIORITY_DISPOSABLE );
+        nal_start( h, NAL_AUD, NAL_PRIORITY_DISPOSABLE );// nal头信息
         bs_write( &h->out.bs, 3, pic_type );
         bs_rbsp_trailing( &h->out.bs );
         bs_flush( &h->out.bs );
@@ -3637,8 +3644,8 @@ int     x264_encoder_encode( x264_t *h,
         overhead += h->out.nal[h->out.i_nal-1].i_payload + NALU_OVERHEAD;
     }
 
-    h->i_nal_type = i_nal_type;
-    h->i_nal_ref_idc = i_nal_ref_idc;
+    h->i_nal_type = i_nal_type;// nal类型
+    h->i_nal_ref_idc = i_nal_ref_idc;// nal重要程度
 
     if( h->param.b_intra_refresh )
     {
@@ -3675,7 +3682,7 @@ int     x264_encoder_encode( x264_t *h,
             }
         }
     }
-
+    // 每个关键帧前都必须添加sps和pps
     if( h->fenc->b_keyframe )
     {
         /* Write SPS and PPS */
@@ -3720,6 +3727,7 @@ int     x264_encoder_encode( x264_t *h,
     }
 
     /* write extra sei */
+    // 下面很大一段代码用于写入SEI（一部分是为了适配其他的解码器）
     for( int i = 0; i < h->fenc->extra_sei.num_payloads; i++ )
     {
         nal_start( h, NAL_SEI, NAL_PRIORITY_DISPOSABLE );
@@ -3741,7 +3749,7 @@ int     x264_encoder_encode( x264_t *h,
         h->fenc->extra_sei.payloads = NULL;
         h->fenc->extra_sei.sei_free = NULL;
     }
-
+    // 特殊的SEI信息（Avid等解码器需要）
     if( h->fenc->b_keyframe )
     {
         /* Avid's decoder strictly wants two SEIs for AVC-Intra so we can't insert the x264 SEI */
@@ -3868,10 +3876,10 @@ int     x264_encoder_encode( x264_t *h,
         h->out.nal[h->out.i_nal-1].i_padding = total_len - h->out.nal[h->out.i_nal-1].i_payload - SEI_OVERHEAD;
         overhead += h->out.nal[h->out.i_nal-1].i_payload + h->out.nal[h->out.i_nal-1].i_padding + SEI_OVERHEAD;
     }
-
+    // 写入sei结束-----
     /* Init the rate control */
     /* FIXME: Include slice header bit cost. */
-    x264_ratecontrol_start( h, h->fenc->i_qpplus1, overhead*8 );
+    x264_ratecontrol_start( h, h->fenc->i_qpplus1, overhead*8 );// 开启码率控制
     i_global_qp = x264_ratecontrol_qp( h );
 
     pic_out->i_qpplus1 =
@@ -3887,13 +3895,13 @@ int     x264_encoder_encode( x264_t *h,
         h->fdec->i_poc_l0ref0 = h->fref[0][0]->i_poc;
 
     /* ------------------------ Create slice header  ----------------------- */
-    slice_init( h, i_nal_type, i_global_qp );
+    slice_init( h, i_nal_type, i_global_qp );// 初始化slice头，并初始化头信息结构体
 
     /*------------------------- Weights -------------------------------------*/
     if( h->sh.i_type == SLICE_TYPE_B )
         x264_macroblock_bipred_init( h );
 
-    weighted_pred_init( h );
+    weighted_pred_init( h );// 加权预测
 
     if( i_nal_ref_idc != NAL_PRIORITY_DISPOSABLE )
         h->i_frame_num++;
@@ -3906,15 +3914,22 @@ int     x264_encoder_encode( x264_t *h,
         x264_threadpool_run( h->threadpool, (void*)slices_write, h );
         h->b_thread_active = 1;
     }
-    else if( h->param.b_sliced_threads )
+    else if( h->param.b_sliced_threads )// 标识是否使用基于Slice的多线程处理
     {
+        // 编码数据（最关键的步骤）。其中调用了x264_slice_write()完成了编码的工作
+        //（注意“slices_write()”和“slice_write()”名字差了一个“s”）
         if( threaded_slices_write( h ) )
             return -1;
     }
     else
-        if( (intptr_t)slices_write( h ) )
+        if( (intptr_t)slices_write( h ) )// 真正的编码——编码1个图像帧（注意这里“slices”后面有“s”）
             return -1;
 
+    // 编码结束后做一些后续处理，例如记录一些统计信息。其中调用了x264_encoder_encapsulate_nals()封装NALU（添加起始码），
+    // 调用x264_frame_push_unused()将fenc重新放回frames.unused[]队列，并且调用x264_ratecontrol_end()结束码率控制
+    // 结束的时候做一些处理，记录一些统计信息
+    // 输出NALU
+    // 输出重建帧
     return encoder_frame_end( thread_oldest, thread_current, pp_nal, pi_nal, pic_out );
 }
 
