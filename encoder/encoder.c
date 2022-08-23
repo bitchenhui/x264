@@ -3455,7 +3455,7 @@ int     x264_encoder_encode( x264_t *h,
     }
     else
     {
-        /* signal kills for lookahead thread */
+        /* 输入数据空时不需要lookaheadsignal kills for lookahead thread */
         x264_pthread_mutex_lock( &h->lookahead->ifbuf.mutex );// 加锁
         h->lookahead->b_exit_thread = 1;
         x264_pthread_cond_broadcast( &h->lookahead->ifbuf.cv_fill );
@@ -3544,7 +3544,7 @@ int     x264_encoder_encode( x264_t *h,
         i_nal_type    = NAL_SLICE_IDR;
         i_nal_ref_idc = NAL_PRIORITY_HIGHEST;
         h->sh.i_type = SLICE_TYPE_I;
-        reference_reset( h );// idr帧清空参考帧列表
+        reference_reset( h );// idr帧清空参考帧列表,但i帧不会
         h->frames.i_poc_last_open_gop = -1;
     }
     else if( h->fenc->i_type == X264_TYPE_I )
@@ -3564,7 +3564,7 @@ int     x264_encoder_encode( x264_t *h,
         reference_hierarchy_reset( h );
         h->frames.i_poc_last_open_gop = -1;
     }
-    else if( h->fenc->i_type == X264_TYPE_BREF )
+    else if( h->fenc->i_type == X264_TYPE_BREF )// 可以做参考帧的b帧
     {
         i_nal_type    = NAL_SLICE;
         i_nal_ref_idc = h->param.i_bframe_pyramid == X264_B_PYRAMID_STRICT ? NAL_PRIORITY_LOW : NAL_PRIORITY_HIGH;
@@ -3877,7 +3877,7 @@ int     x264_encoder_encode( x264_t *h,
         overhead += h->out.nal[h->out.i_nal-1].i_payload + h->out.nal[h->out.i_nal-1].i_padding + SEI_OVERHEAD;
     }
     // 写入sei结束-----
-    /* Init the rate control */
+    /* Init the rate control 码率控制单元初始化*/
     /* FIXME: Include slice header bit cost. */
     x264_ratecontrol_start( h, h->fenc->i_qpplus1, overhead*8 );// 开启码率控制
     i_global_qp = x264_ratecontrol_qp( h );

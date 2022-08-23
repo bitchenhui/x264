@@ -45,7 +45,7 @@ static int align_plane_size( int x, int disalign )
 static int frame_internal_csp( int external_csp )
 {
     int csp = external_csp & X264_CSP_MASK;
-    if( csp == X264_CSP_I400 )
+    if( csp == X264_CSP_I400 )// 多了一个灰度图像的兼容
         return X264_CSP_I400;
     if( csp >= X264_CSP_I420 && csp < X264_CSP_I422 )
         return X264_CSP_NV12;
@@ -55,11 +55,12 @@ static int frame_internal_csp( int external_csp )
         return X264_CSP_I444;
     return X264_CSP_NONE;
 }
-
+// 新建帧
 static x264_frame_t *frame_new( x264_t *h, int b_fdec )
 {
     x264_frame_t *frame;
-    int i_csp = frame_internal_csp( h->param.i_csp );
+    // 注意转换后只有3种colorspace：X264_CSP_NV12(对应YUV420),X264_CSP_NV16(对应YUV422),X264_CSP_I444(对应YUV444)
+    int i_csp = frame_internal_csp( h->param.i_csp );// 把外界复杂的colorspace转换为内部colodspace
     int i_mb_count = h->mb.i_mb_count;
     int i_stride, i_width, i_lines, luma_plane_count;
     int i_padv = PADV << PARAM_INTERLACED;
@@ -77,16 +78,16 @@ static x264_frame_t *frame_new( x264_t *h, int b_fdec )
 #else
     int disalign = (1<<10) / SIZEOF_PIXEL;
 #endif
-
+    // 给frame分配内存，并置0
     CHECKED_MALLOCZERO( frame, sizeof(x264_frame_t) );
     PREALLOC_INIT
 
-    /* allocate frame data (+64 for extra data for me) */
+    /* allocate frame data (+64 for extra data for me) 以像素为单位的宽高*/
     i_width  = h->mb.i_mb_width*16;
     i_lines  = h->mb.i_mb_height*16;
     i_stride = align_stride( i_width + PADH2, align, disalign );
 
-    if( i_csp == X264_CSP_NV12 || i_csp == X264_CSP_NV16 )
+    if( i_csp == X264_CSP_NV12 || i_csp == X264_CSP_NV16 )// yuv420和yuv422的情况
     {
         luma_plane_count = 1;
         frame->i_plane = 2;
@@ -118,8 +119,9 @@ static x264_frame_t *frame_new( x264_t *h, int b_fdec )
     }
     else
         goto fail;
-
+    // 赋值。对frame的成员变量进行内存分配和赋值
     frame->i_csp = i_csp;
+    // 降低分辨率后的宽高
     frame->i_width_lowres = frame->i_width[0]/2;
     frame->i_lines_lowres = frame->i_lines[0]/2;
     frame->i_stride_lowres = align_stride( frame->i_width_lowres + PADH2, align, disalign<<1 );
@@ -173,8 +175,9 @@ static x264_frame_t *frame_new( x264_t *h, int b_fdec )
 
     frame->b_duplicate = 0;
 
-    if( b_fdec ) /* fdec frame */
+    if( b_fdec ) /* fdec frame 重建帧fdec*/
     {
+
         PREALLOC( frame->mb_type, i_mb_count * sizeof(int8_t) );
         PREALLOC( frame->mb_partition, i_mb_count * sizeof(uint8_t) );
         PREALLOC( frame->mv[0], 2*16 * i_mb_count * sizeof(int16_t) );
@@ -200,7 +203,7 @@ static x264_frame_t *frame_new( x264_t *h, int b_fdec )
         if( h->param.analyse.b_mb_info )
             PREALLOC( frame->effective_qp, i_mb_count * sizeof(uint8_t) );
     }
-    else /* fenc frame */
+    else /* fenc frame 编码帧*/
     {
         if( h->frames.b_have_lowres )
         {
@@ -358,7 +361,7 @@ static int get_plane_ptr( x264_t *h, x264_picture_t *src, uint8_t **pix, int *st
 }
 
 #define get_plane_ptr(...) do { if( get_plane_ptr(__VA_ARGS__) < 0 ) return -1; } while( 0 )
-
+// 把外部结构体x264_picture_t拷贝给内部结构体x264_frame_t，基本变量能对上，就做简单的赋值
 int x264_frame_copy_picture( x264_t *h, x264_frame_t *dst, x264_picture_t *src )
 {
     int i_csp = src->img.i_csp & X264_CSP_MASK;
@@ -737,12 +740,12 @@ void x264_frame_push( x264_frame_t **list, x264_frame_t *frame )
     while( list[i] ) i++;
     list[i] = frame;
 }
-
+// 从队列末尾取一帧
 x264_frame_t *x264_frame_pop( x264_frame_t **list )
 {
     x264_frame_t *frame;
     int i = 0;
-    assert( list[0] );
+    assert( list[0] );// 如果list[0]为0停止程序并报错
     while( list[i+1] ) i++;
     frame = list[i];
     list[i] = NULL;
@@ -775,14 +778,14 @@ void x264_frame_push_unused( x264_t *h, x264_frame_t *frame )
     if( frame->i_reference_count == 0 )
         x264_frame_push( h->frames.unused[frame->b_fdec], frame );
 }
-
+// 获取一帧的编码帧fenc/重建帧fdec
 x264_frame_t *x264_frame_pop_unused( x264_t *h, int b_fdec )
 {
     x264_frame_t *frame;
-    if( h->frames.unused[b_fdec][0] )
-        frame = x264_frame_pop( h->frames.unused[b_fdec] );
+    if( h->frames.unused[b_fdec][0] )// unused队列不为空,b_fdec为0:fenc;1:fdec
+        frame = x264_frame_pop( h->frames.unused[b_fdec] );// 从unused队列中取
     else
-        frame = frame_new( h, b_fdec );
+        frame = frame_new( h, b_fdec );// 分配一帧空间
     if( !frame )
         return NULL;
     frame->b_last_minigop_bframe = 0;
@@ -878,7 +881,7 @@ void x264_sync_frame_list_push( x264_sync_frame_list_t *slist, x264_frame_t *fra
     x264_pthread_mutex_lock( &slist->mutex );
     while( slist->i_size == slist->i_max_size )
         x264_pthread_cond_wait( &slist->cv_empty, &slist->mutex );
-    slist->list[ slist->i_size++ ] = frame;
+    slist->list[ slist->i_size++ ] = frame;// 放入frame到队列尾部
     x264_pthread_mutex_unlock( &slist->mutex );
     x264_pthread_cond_broadcast( &slist->cv_fill );
 }

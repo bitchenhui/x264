@@ -188,10 +188,10 @@ void x264_lookahead_delete( x264_t *h )
     x264_sync_frame_list_delete( &h->lookahead->ofbuf );
     x264_free( h->lookahead );
 }
-
+// x264_frame_t内部结构体放入x264_sync_frame_list_t队列
 void x264_lookahead_put_frame( x264_t *h, x264_frame_t *frame )
 {
-    if( h->param.i_sync_lookahead )
+    if( h->param.i_sync_lookahead )//放入不同队列ifbuf/next
         x264_sync_frame_list_push( &h->lookahead->ifbuf, frame );
     else
         x264_sync_frame_list_push( &h->lookahead->next, frame );
@@ -219,10 +219,10 @@ static void lookahead_encoder_shift( x264_t *h )
     }
     x264_pthread_cond_broadcast( &h->lookahead->ofbuf.cv_empty );
 }
-
+// 通过lookahead分析帧类型
 void x264_lookahead_get_frames( x264_t *h )
 {
-    if( h->param.i_sync_lookahead )
+    if( h->param.i_sync_lookahead )// 如果存在前向考虑帧
     {   /* We have a lookahead thread, so get frames from there */
         x264_pthread_mutex_lock( &h->lookahead->ofbuf.mutex );
         while( !h->lookahead->ofbuf.i_size && h->lookahead->b_thread_active )

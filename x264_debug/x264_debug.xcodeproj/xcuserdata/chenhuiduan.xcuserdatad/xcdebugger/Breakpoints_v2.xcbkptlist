@@ -62,8 +62,8 @@
             filePath = "../x264.c"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "1945"
-            endingLineNumber = "1945"
+            startingLineNumber = "1944"
+            endingLineNumber = "1944"
             landmarkName = "encode(param, opt)"
             landmarkType = "9">
          </BreakpointContent>
