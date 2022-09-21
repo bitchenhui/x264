@@ -1741,7 +1741,7 @@ void x264_slicetype_analyse( x264_t *h, int intra_minigop )
     x264_opencl_slicetype_end( h );
 #endif
 }
-
+// 确定帧类型
 void x264_slicetype_decide( x264_t *h )
 {
     x264_frame_t *frames[X264_BFRAME_MAX+2];

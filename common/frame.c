@@ -41,7 +41,7 @@ static int align_plane_size( int x, int disalign )
         x += X264_MAX( 128, NATIVE_ALIGN ) / SIZEOF_PIXEL;
     return x;
 }
-
+// 颜色空间转换翻译函数
 static int frame_internal_csp( int external_csp )
 {
     int csp = external_csp & X264_CSP_MASK;
@@ -445,6 +445,7 @@ int x264_frame_copy_picture( x264_t *h, x264_frame_t *dst, x264_picture_t *src )
     {
         int v_shift = CHROMA_V_SHIFT;
         get_plane_ptr( h, src, &pix[0], &stride[0], 0, 0, 0 );
+        // 拷贝像素
         h->mc.plane_copy( dst->plane[0], dst->i_stride[0], (pixel*)pix[0],
                           stride[0]/SIZEOF_PIXEL, h->param.i_width, h->param.i_height );
         if( i_csp == X264_CSP_NV12 || i_csp == X264_CSP_NV16 )
@@ -746,7 +747,7 @@ x264_frame_t *x264_frame_pop( x264_frame_t **list )
     x264_frame_t *frame;
     int i = 0;
     assert( list[0] );// 如果list[0]为0停止程序并报错
-    while( list[i+1] ) i++;
+    while( list[i+1] ) i++;// 循环找到队列尾部元素
     frame = list[i];
     list[i] = NULL;
     return frame;
@@ -875,7 +876,7 @@ void x264_sync_frame_list_delete( x264_sync_frame_list_t *slist )
     x264_pthread_cond_destroy( &slist->cv_empty );
     x264_frame_delete_list( slist->list );
 }
-
+// 向x264_sync_frame_list_t队列中放入一帧数据
 void x264_sync_frame_list_push( x264_sync_frame_list_t *slist, x264_frame_t *frame )
 {
     x264_pthread_mutex_lock( &slist->mutex );

@@ -191,7 +191,7 @@ void x264_lookahead_delete( x264_t *h )
 // x264_frame_t内部结构体放入x264_sync_frame_list_t队列
 void x264_lookahead_put_frame( x264_t *h, x264_frame_t *frame )
 {
-    if( h->param.i_sync_lookahead )//放入不同队列ifbuf/next
+    if( h->param.i_sync_lookahead )// 根据lookahead的线程数是否非0放入不同队列ifbuf/next
         x264_sync_frame_list_push( &h->lookahead->ifbuf, frame );
     else
         x264_sync_frame_list_push( &h->lookahead->next, frame );
@@ -219,32 +219,34 @@ static void lookahead_encoder_shift( x264_t *h )
     }
     x264_pthread_cond_broadcast( &h->lookahead->ofbuf.cv_empty );
 }
-// 通过lookahead分析帧类型
+// 通过lookahead分析帧类型(i,b,p)
 void x264_lookahead_get_frames( x264_t *h )
 {
-    if( h->param.i_sync_lookahead )// 如果存在前向考虑帧
+    if( h->param.i_sync_lookahead )// 如果lookahead线程非0
     {   /* We have a lookahead thread, so get frames from there */
-        x264_pthread_mutex_lock( &h->lookahead->ofbuf.mutex );
+        x264_pthread_mutex_lock( &h->lookahead->ofbuf.mutex );// 加锁
         while( !h->lookahead->ofbuf.i_size && h->lookahead->b_thread_active )
             x264_pthread_cond_wait( &h->lookahead->ofbuf.cv_fill, &h->lookahead->ofbuf.mutex );
         lookahead_encoder_shift( h );
-        x264_pthread_mutex_unlock( &h->lookahead->ofbuf.mutex );
+        x264_pthread_mutex_unlock( &h->lookahead->ofbuf.mutex );// 解锁
     }
-    else
+    else// 没用到lookahead线程
     {   /* We are not running a lookahead thread, so perform all the slicetype decide on the fly */
-
+        // currect[]必须为空，next不能为空，这是提前做i_sync_lookahead判断的时候引入
         if( h->frames.current[0] || !h->lookahead->next.i_size )
             return;
-
+        // 分析lookahead->next->list帧的类型
         x264_slicetype_decide( h );
+        // 更新lookahead->last_nonb
         lookahead_update_last_nonb( h, h->lookahead->next.list[0] );
         int shift_frames = h->lookahead->next.list[0]->i_bframes + 1;
+        // lookahead->next.list移动到lookahead->ofbuf.list
         lookahead_shift( &h->lookahead->ofbuf, &h->lookahead->next, shift_frames );
 
         /* For MB-tree and VBV lookahead, we have to perform propagation analysis on I-frames too. */
         if( h->lookahead->b_analyse_keyframe && IS_X264_TYPE_I( h->lookahead->last_nonb->i_type ) )
             x264_slicetype_analyse( h, shift_frames );
-
+        // lookahead->ofbuf.list帧移动到frames->current
         lookahead_encoder_shift( h );
     }
 }
