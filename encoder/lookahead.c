@@ -237,15 +237,15 @@ void x264_lookahead_get_frames( x264_t *h )
             return;
         // 分析lookahead->next->list帧的类型
         x264_slicetype_decide( h );
-        // 更新lookahead->last_nonb
+        // 更新lookahead->last_nonb最后一个非b帧
         lookahead_update_last_nonb( h, h->lookahead->next.list[0] );
-        int shift_frames = h->lookahead->next.list[0]->i_bframes + 1;
-        // lookahead->next.list移动到lookahead->ofbuf.list
+        int shift_frames = h->lookahead->next.list[0]->i_bframes + 1;// 计算需要移动的帧数
+        // 将lookahead->next.list中最左边shift_frames个帧移动到lookahead->ofbuf.list
         lookahead_shift( &h->lookahead->ofbuf, &h->lookahead->next, shift_frames );
 
         /* For MB-tree and VBV lookahead, we have to perform propagation analysis on I-frames too. */
         if( h->lookahead->b_analyse_keyframe && IS_X264_TYPE_I( h->lookahead->last_nonb->i_type ) )
-            x264_slicetype_analyse( h, shift_frames );
+            x264_slicetype_analyse( h, shift_frames );// 分析帧类型
         // lookahead->ofbuf.list帧移动到frames->current
         lookahead_encoder_shift( h );
     }

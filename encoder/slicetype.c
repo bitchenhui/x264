@@ -1753,23 +1753,39 @@ void x264_slicetype_decide( x264_t *h )
         return;
 
     int lookahead_size = h->lookahead->next.i_size;
-
-    for( int i = 0; i < h->lookahead->next.i_size; i++ )
+    // 计算每一帧的时长duration
+    for( int i = 0; i < h->lookahead->next.i_size; i++ )// 遍历next
     {
-        if( h->param.b_vfr_input )
+        if( h->param.b_vfr_input )// 如果支持可变帧率variable framerate
         {
             if( lookahead_size-- > 1 )
+                // 如果不是最后一帧，则 当前帧时长 = 2 * (后帧pts - 当前帧pts)
                 h->lookahead->next.list[i]->i_duration = 2 * (h->lookahead->next.list[i+1]->i_pts - h->lookahead->next.list[i]->i_pts);
             else
+                // 最后一帧时长 = 前一帧时长
                 h->lookahead->next.list[i]->i_duration = h->i_prev_duration;
         }
         else
+        /*    根据frame的结构来得到duration，其中i_pic_struct取值:
+            PIC_STRUCT_AUTO              = 0, // automatically decide (default)
+            PIC_STRUCT_PROGRESSIVE       = 1, // progressive frame
+            // "TOP" and "BOTTOM" are not supported in x264 (PAFF only)
+            PIC_STRUCT_TOP_BOTTOM        = 4, // top field followed by bottom
+            PIC_STRUCT_BOTTOM_TOP        = 5, // bottom field followed by top
+            PIC_STRUCT_TOP_BOTTOM_TOP    = 6, // top field, bottom field, top field repeated
+            PIC_STRUCT_BOTTOM_TOP_BOTTOM = 7, // bottom field, top field, bottom field repeated
+            PIC_STRUCT_DOUBLE            = 8, // double frame
+            PIC_STRUCT_TRIPLE            = 9, // triple frame    */
             h->lookahead->next.list[i]->i_duration = delta_tfi_divisor[h->lookahead->next.list[i]->i_pic_struct];
+        // 将上一个duration更新为当前帧的duration
         h->i_prev_duration = h->lookahead->next.list[i]->i_duration;
+        /* 通过i_duration和sps里的i_time_scale计算f_duration，
+           f_duration是以秒为单位的float，
+           i_duration是以sps里面time_scale为单位的int */
         h->lookahead->next.list[i]->f_duration = (double)h->lookahead->next.list[i]->i_duration
                                                * h->sps->vui.i_num_units_in_tick
                                                / h->sps->vui.i_time_scale;
-
+        // 计算Presentation field count
         if( h->lookahead->next.list[i]->i_frame > h->i_disp_fields_last_frame && lookahead_size > 0 )
         {
             h->lookahead->next.list[i]->i_field_cnt = h->i_disp_fields;
@@ -1781,9 +1797,9 @@ void x264_slicetype_decide( x264_t *h )
             h->lookahead->next.list[i]->i_field_cnt = h->i_disp_fields;
             h->lookahead->next.list[i]->i_duration = h->i_prev_duration;
         }
-    }
+    }// 遍历next完成duration计算
 
-    if( h->param.rc.b_stat_read )
+    if( h->param.rc.b_stat_read )// 若stat_read读取编码配置文件，就是multipass
     {
         /* Use the frame types from the first pass */
         for( int i = 0; i < h->lookahead->next.i_size; i++ )
@@ -1794,7 +1810,8 @@ void x264_slicetype_decide( x264_t *h )
              || h->param.i_scenecut_threshold
              || h->param.rc.b_mb_tree
              || (h->param.rc.i_vbv_buffer_size && h->param.rc.i_lookahead) )
-        x264_slicetype_analyse( h, 0 );
+        // 允许B帧 && B帧自适应 || 使用场景转换 || 使用mb-tree || 使用vbv&&码率控制
+        x264_slicetype_analyse( h, 0 );// 进行帧类型分析，得到每个frame的i_type
 
     for( bframes = 0, brefs = 0;; bframes++ )
     {
