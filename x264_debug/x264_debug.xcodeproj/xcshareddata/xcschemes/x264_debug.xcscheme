@@ -14,7 +14,7 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "165C211C287D22B500DF5B68"
+               BlueprintIdentifier = "164AAD15287C849400636FE7"
                BuildableName = "x264_debug"
                BlueprintName = "x264_debug"
                ReferencedContainer = "container:x264_debug.xcodeproj">
@@ -60,7 +60,7 @@
       <MacroExpansion>
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "165C211C287D22B500DF5B68"
+            BlueprintIdentifier = "164AAD15287C849400636FE7"
             BuildableName = "x264_debug"
             BlueprintName = "x264_debug"
             ReferencedContainer = "container:x264_debug.xcodeproj">

@@ -78,7 +78,7 @@ void x264_predict_16x16_dc_c( pixel *src )
 // dc特殊模式1:适用于顶部参考像素不可用的dc帧内预测
 static void predict_16x16_dc_left_c( pixel *src )
 {
-    int dc = 0;、
+    int dc = 0;
     // 左面参考像素累加
     for( int i = 0; i < 16; i++ )
         dc += src[-1 + i * FDEC_STRIDE];

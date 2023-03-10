@@ -72,7 +72,7 @@
          BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
          <BreakpointContent
             uuid = "52CF7DAA-9786-4895-8BA1-9B00D78A9D01"
-            shouldBeEnabled = "Yes"
+            shouldBeEnabled = "No"
             ignoreCount = "0"
             continueAfterRunningActions = "No"
             filePath = "../encoder/encoder.c"
@@ -84,7 +84,7 @@
             landmarkType = "9">
             <Locations>
                <Location
-                  uuid = "52CF7DAA-9786-4895-8BA1-9B00D78A9D01 - ec2f701a3d455e64"
+                  uuid = "52CF7DAA-9786-4895-8BA1-9B00D78A9D01 - ec2f701a3d455f85"
                   shouldBeEnabled = "Yes"
                   ignoreCount = "0"
                   continueAfterRunningActions = "No"
@@ -94,12 +94,12 @@
                   urlString = "file:///Users/chenhuiduan/Documents/ppcodec/x264/encoder/encoder.c"
                   startingColumnNumber = "9223372036854775807"
                   endingColumnNumber = "9223372036854775807"
-                  startingLineNumber = "1604"
-                  endingLineNumber = "1604"
-                  offsetFromSymbolStart = "681">
+                  startingLineNumber = "1605"
+                  endingLineNumber = "1605"
+                  offsetFromSymbolStart = "1560">
                </Location>
                <Location
-                  uuid = "52CF7DAA-9786-4895-8BA1-9B00D78A9D01 - 524bd95fd8a8be52"
+                  uuid = "52CF7DAA-9786-4895-8BA1-9B00D78A9D01 - 524bd95fd8a8bfb3"
                   shouldBeEnabled = "Yes"
                   ignoreCount = "0"
                   continueAfterRunningActions = "No"
@@ -109,9 +109,57 @@
                   urlString = "file:///Users/chenhuiduan/Documents/ppcodec/x264/encoder/encoder.c"
                   startingColumnNumber = "9223372036854775807"
                   endingColumnNumber = "9223372036854775807"
-                  startingLineNumber = "1604"
-                  endingLineNumber = "1604"
-                  offsetFromSymbolStart = "681">
+                  startingLineNumber = "1605"
+                  endingLineNumber = "1605"
+                  offsetFromSymbolStart = "1560">
+               </Location>
+            </Locations>
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            uuid = "5246C2B1-C329-42FA-989F-ED1F79397D76"
+            shouldBeEnabled = "Yes"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "../common/pixel.c"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "912"
+            endingLineNumber = "912"
+            landmarkName = "x264_pixel_init(cpu, pixf)"
+            landmarkType = "9">
+            <Locations>
+               <Location
+                  uuid = "5246C2B1-C329-42FA-989F-ED1F79397D76 - 10331e5ee5e632f"
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "x264_8_pixel_init"
+                  moduleName = "x264"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/chenhuiduan/Documents/ppcodec/x264/common/pixel.c"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "1545"
+                  endingLineNumber = "1545"
+                  offsetFromSymbolStart = "1624">
+               </Location>
+               <Location
+                  uuid = "5246C2B1-C329-42FA-989F-ED1F79397D76 - 415a8a8bb9f4e905"
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "x264_10_pixel_init"
+                  moduleName = "x264"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/chenhuiduan/Documents/ppcodec/x264/common/pixel.c"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "1545"
+                  endingLineNumber = "1545"
+                  offsetFromSymbolStart = "1624">
                </Location>
             </Locations>
          </BreakpointContent>
