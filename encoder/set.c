@@ -1,7 +1,7 @@
 /*****************************************************************************
  * set: header writing
  *****************************************************************************
- * Copyright (C) 2003-2021 x264 project
+ * Copyright (C) 2003-2023 x264 project
  *
  * Authors: Laurent Aimar <fenrir@via.ecp.fr>
  *          Loren Merritt <lorenm@u.washington.edu>
@@ -621,7 +621,7 @@ int x264_sei_version_write( x264_t *h, bs_t *s )
     memcpy( payload, uuid, 16 );
     // 这里可以区别填入一些qq的版本信息等
     sprintf( payload+16, "x264 - core %d%s - H.264/MPEG-4 AVC codec - "
-             "Copy%s 2003-2021 - http://www.videolan.org/x264.html - options: %s",
+             "Copy%s 2003-2023 - http://www.videolan.org/x264.html - options: %s",
              X264_BUILD, X264_VERSION, HAVE_GPL?"left":"right", opts );
     length = strlen(payload)+1;
     // 输出sei，数据类型为USER_DATA_UNREGISTERE

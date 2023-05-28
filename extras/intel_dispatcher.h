@@ -1,7 +1,7 @@
 /*****************************************************************************
- * bitstream.h: aarch64 bitstream functions
+ * intel_dispatcher.h: intel compiler cpu dispatcher override
  *****************************************************************************
- * Copyright (C) 2017-2023 x264 project
+ * Copyright (C) 2014-2023 x264 project
  *
  * Authors: Anton Mitrofanov <BugMaster@narod.ru>
  *
@@ -23,10 +23,24 @@
  * For more information, contact us at licensing@x264.com.
  *****************************************************************************/
 
-#ifndef X264_AARCH64_BITSTREAM_H
-#define X264_AARCH64_BITSTREAM_H
+#ifndef X264_INTEL_DISPATCHER_H
+#define X264_INTEL_DISPATCHER_H
 
-#define x264_nal_escape_neon x264_template(nal_escape_neon)
-uint8_t *x264_nal_escape_neon( uint8_t *dst, uint8_t *src, uint8_t *end );
+/* Feature flags using _FEATURE_* defines from immintrin.h */
+extern unsigned long long __intel_cpu_feature_indicator;
+extern unsigned long long __intel_cpu_feature_indicator_x;
+
+/* CPU vendor independent version of dispatcher */
+void __intel_cpu_features_init_x( void );
+
+static void x264_intel_dispatcher_override( void )
+{
+    if( __intel_cpu_feature_indicator & ~1ULL )
+        return;
+    __intel_cpu_feature_indicator = 0;
+    __intel_cpu_feature_indicator_x = 0;
+    __intel_cpu_features_init_x();
+    __intel_cpu_feature_indicator = __intel_cpu_feature_indicator_x;
+}
 
 #endif
