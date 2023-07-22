@@ -65,7 +65,7 @@ typedef struct
                                                   intptr_t ctx_block_cat, x264_cabac_t *cb );
 } x264_bitstream_function_t;
 
-#define x264_bitstream_init x264_template(bitstream_init)
+
 void x264_bitstream_init( uint32_t cpu, x264_bitstream_function_t *pf );
 
 /* A larger level table size theoretically could help a bit at extremely
@@ -74,13 +74,13 @@ void x264_bitstream_init( uint32_t cpu, x264_bitstream_function_t *pf );
  * This size appears to be optimal for QP18 encoding on a Nehalem CPU.
  * FIXME: Do further testing? */
 #define LEVEL_TABLE_SIZE 128
-#define x264_level_token x264_template(level_token)
+
 extern vlc_large_t x264_level_token[7][LEVEL_TABLE_SIZE];
 
 /* The longest possible set of zero run codes sums to 25 bits.  This leaves
  * plenty of room for both the code (25 bits) and size (5 bits) in a uint32_t. */
 
-#define x264_run_before x264_template(run_before)
+
 extern uint32_t x264_run_before[1<<16];
 
 static inline void bs_init( bs_t *s, void *p_data, int i_data )

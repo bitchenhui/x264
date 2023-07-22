@@ -153,7 +153,7 @@ static void mc_copy_w16_aligned_altivec( uint8_t *dst, intptr_t i_dst,
     }
 }
 
-#define x264_plane_copy_swap_core_altivec x264_template(plane_copy_swap_core_altivec)
+
 void x264_plane_copy_swap_core_altivec( uint8_t *dst, intptr_t i_dst,
                                         uint8_t *src, intptr_t i_src, int w, int h )
 {
@@ -169,7 +169,7 @@ void x264_plane_copy_swap_core_altivec( uint8_t *dst, intptr_t i_dst,
         }
 }
 
-#define x264_plane_copy_interleave_core_altivec x264_template(plane_copy_interleave_core_altivec)
+
 void x264_plane_copy_interleave_core_altivec( uint8_t *dst, intptr_t i_dst,
                                               uint8_t *srcu, intptr_t i_srcu,
                                               uint8_t *srcv, intptr_t i_srcv, int w, int h )

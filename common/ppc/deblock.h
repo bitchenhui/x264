@@ -26,9 +26,9 @@
 #ifndef X264_PPC_DEBLOCK_H
 #define X264_PPC_DEBLOCK_H
 
-#define x264_deblock_v_luma_altivec x264_template(deblock_v_luma_altivec)
+
 void x264_deblock_v_luma_altivec( uint8_t *pix, intptr_t stride, int alpha, int beta, int8_t *tc0 );
-#define x264_deblock_h_luma_altivec x264_template(deblock_h_luma_altivec)
+
 void x264_deblock_h_luma_altivec( uint8_t *pix, intptr_t stride, int alpha, int beta, int8_t *tc0 );
 
 #endif

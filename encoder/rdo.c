@@ -32,9 +32,9 @@
 
 /* Transition and size tables for abs<9 MVD and residual coding */
 /* Consist of i_prefix-2 1s, one zero, and a bypass sign bit */
-#define x264_cabac_transition_unary x264_template(cabac_transition_unary)
+
 uint8_t x264_cabac_transition_unary[15][128];
-#define x264_cabac_size_unary x264_template(cabac_size_unary)
+
 uint16_t x264_cabac_size_unary[15][128];
 /* Transition and size tables for abs>9 MVD */
 /* Consist of 5 1s and a bypass sign bit */
@@ -530,7 +530,7 @@ int trellis_coef( int j, int const_level, int abs_level, int prefix, int suffix_
     return levels_used;
 }
 
-// encode one value of one coef in all contexts, templated by which value that is.
+
 // in ctx_lo, the set of live nodes is contiguous and starts at ctx0, so return as soon as we've seen one failure.
 // in ctx_hi, they're contiguous within each block of 4 ctxs, but not necessarily starting at the beginning,
 // so exploiting that would be more complicated.

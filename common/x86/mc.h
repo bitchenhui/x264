@@ -27,7 +27,7 @@
 #ifndef X264_X86_MC_H
 #define X264_X86_MC_H
 
-#define x264_mc_init_mmx x264_template(mc_init_mmx)
+
 void x264_mc_init_mmx( uint32_t cpu, x264_mc_functions_t *pf );
 
 #endif

@@ -30,26 +30,6 @@
 #include "base.h"
 
 /* Macros for templating function calls according to bit depth */
-#define x264_template(w) x264_glue3(x264, BIT_DEPTH, w)
-
-/****************************************************************************
- * API Templates
- ****************************************************************************/
-#define x264_nal_encode x264_template(nal_encode)
-#define x264_encoder_reconfig x264_template(encoder_reconfig)
-#define x264_encoder_parameters x264_template(encoder_parameters)
-#define x264_encoder_headers x264_template(encoder_headers)
-#define x264_encoder_encode x264_template(encoder_encode)
-#define x264_encoder_close x264_template(encoder_close)
-#define x264_encoder_delayed_frames x264_template(encoder_delayed_frames)
-#define x264_encoder_maximum_delayed_frames x264_template(encoder_maximum_delayed_frames)
-#define x264_encoder_intra_refresh x264_template(encoder_intra_refresh)
-#define x264_encoder_invalidate_reference x264_template(encoder_invalidate_reference)
-
-/* This undef allows to rename the external symbol and force link failure in case
- * of incompatible libraries. Then the define enables templating as above. */
-#undef x264_encoder_open
-#define x264_encoder_open x264_template(encoder_open)
 
 /****************************************************************************
  * Macros
@@ -134,12 +114,12 @@
  ****************************************************************************/
 
 /* log */
-#define x264_log x264_template(log)
+
 void x264_log( x264_t *h, int i_level, const char *psz_fmt, ... );
 
-#define x264_cavlc_init x264_template(cavlc_init)
+
 void x264_cavlc_init( x264_t *h );
-#define x264_cabac_init x264_template(cabac_init)
+
 void x264_cabac_init( x264_t *h );
 
 static ALWAYS_INLINE pixel x264_clip_pixel( int x )

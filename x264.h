@@ -922,7 +922,7 @@ X264_API x264_t *x264_encoder_open( x264_param_t * );
 #define x264_encoder_glue1(x,y) x##y
 #define x264_encoder_glue2(x,y) x264_encoder_glue1(x,y)
 #define x264_encoder_open x264_encoder_glue2(x264_encoder_open_,X264_BUILD)
-
+//X264_API x264_t *x264_encoder_open( x264_param_t * );
 /* x264_encoder_open:
  *      create a new encoder handler, all parameters from x264_param_t are copied */
 /* x264_encoder_reconfig:

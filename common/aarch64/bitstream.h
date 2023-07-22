@@ -26,7 +26,7 @@
 #ifndef X264_AARCH64_BITSTREAM_H
 #define X264_AARCH64_BITSTREAM_H
 
-#define x264_nal_escape_neon x264_template(nal_escape_neon)
+
 uint8_t *x264_nal_escape_neon( uint8_t *dst, uint8_t *src, uint8_t *end );
 
 #endif
