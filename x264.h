@@ -134,7 +134,7 @@ typedef struct x264_nal_t
  * Encoder parameters
  ****************************************************************************/
 /* CPU flags */
-
+#define CPU_BUILD_ERROR             1
 /* x86 */
 #define X264_CPU_MMX                (1U<<0)
 #define X264_CPU_MMX2               (1U<<1)  /* MMX2 aka MMXEXT aka ISSE */
@@ -915,7 +915,7 @@ X264_API void x264_picture_clean( x264_picture_t *pic );
 /****************************************************************************
  * Encoder functions
  ****************************************************************************/
-
+X264_API x264_t *x264_encoder_open( x264_param_t * );
 /* Force a link error in the case of linking against an incompatible API version.
  * Glue #defines exist to force correct macro expansion; the final output of the macro
  * is x264_encoder_open_##X264_BUILD (for purposes of dlopen). */
@@ -925,8 +925,6 @@ X264_API void x264_picture_clean( x264_picture_t *pic );
 
 /* x264_encoder_open:
  *      create a new encoder handler, all parameters from x264_param_t are copied */
-X264_API x264_t *x264_encoder_open( x264_param_t * );
-
 /* x264_encoder_reconfig:
  *      various parameters from x264_param_t are copied.
  *      this takes effect immediately, on whichever frame is encoded next;
