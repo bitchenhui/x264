@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.6)
 
 project(libx264)
-
+add_definitions(-DBIT_DEPTH=8)
 if(${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang")
     set(CLANG 1)
 endif()
@@ -213,11 +213,11 @@ if (IOS OR ANDROID OR (OSX AND (${CMAKE_OSX_ARCHITECTURES} STREQUAL 'arm64')) OR
         endif()
     elseif(IOS OR OSX)
         foreach(SRC ${C_SRCS})
-            list(APPEND ARM_SRCS ./common/arm/${SRC})
+            #list(APPEND ARM_SRCS ./common/arm/${SRC})
             list(APPEND ARM64_SRCS ./common/aarch64/${SRC})
         endforeach()
-        set(A_SRCS ${ARM_SRCS} ${ARM64_SRCS})
-        source_group(arm FILES ${ARM_SRCS})
+        set(A_SRCS ${ARM64_SRCS})
+        #source_group(arm FILES ${ARM_SRCS})
         source_group(arm64 FILES ${ARM64_SRCS})
     elseif(LINUX_ARCH_AARCH64)
         foreach(SRC ${C_SRCS})
