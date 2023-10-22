@@ -68,6 +68,7 @@ set(SOURCE_FILES
     ./common/vlc.c
     ./encoder/analyse.h
     ./encoder/analyse.c
+    ./encoder/api.c
     ./encoder/cabac.c
     ./encoder/cavlc.c
     ./encoder/encoder.c

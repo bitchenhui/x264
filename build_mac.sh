@@ -3,8 +3,8 @@
  # @Author: zhangda
  # @Date: 2023-10-15 13:41:47
  # @LastEditors: bitchenhui 13261281092@163.com
- # @LastEditTime: 2023-10-15 14:31:10
- # @FilePath: /x264/build_mac.sh
+ # @LastEditTime: 2023-10-22 10:24:10
+ # @FilePath: /codecbuildtool/x264/build_mac.sh
  # @Description: 
  # 
  # Copyright (c) 2023 by ${git_name_email}, All Rights Reserved. 
@@ -31,7 +31,3 @@ fi
 make -j8
 make install
 make clean
-
-cd $INSTALL_PATH/bin
-xcodebuild -create-xcconfig -output ./x264.xcconfig
-xcodebuild -project x264.xcodeproj -configuration Debug -target x264 -xcconfig ./x264.xcconfig
